@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import yaml
 from src.logger import logging
+import os
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -20,17 +21,32 @@ def load_data(file_path: str) -> pd.DataFrame:
         logging.error('Unexpected error occurred while loading the data: %s', e)
         raise
 
-def split_data(df, test_Size, Random_state):
+def split_data(df, test_size, random_state):
     try:
-      logging.info('Spliting data ...... ')
-      x = df.drop(columns=['Has_Asthma'])
-      y = df['Has_Asthma']
-      x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_Size, random_state=Random_state)
-      return x_train, x_test, y_train, y_test
+        logging.info('Splitting data ......')
+
+        # Split features and target
+        x = df.drop(columns=['Has_Asthma'])
+        y = df['Has_Asthma']
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=random_state)
+
+        # Ensure the folder exists
+        folder_path = os.path.join(os.getcwd(), 'splited_data')
+        os.makedirs(folder_path, exist_ok=True)
+
+        # Save the splits to CSV
+        x_train.to_csv(os.path.join(folder_path, 'x_train.csv'), index=False)
+        x_test.to_csv(os.path.join(folder_path, 'x_test.csv'), index=False)
+        y_train.to_csv(os.path.join(folder_path, 'y_train.csv'), index=False)
+        y_test.to_csv(os.path.join(folder_path, 'y_test.csv'), index=False)
+
+        logging.info(f'Data splits saved in {folder_path}')
+
+        return x_train, x_test, y_train, y_test
+
     except Exception as e:
         logging.error(f'The error is {e}')
         raise
-    
         
 def training_model(x_train, y_train):
     try:

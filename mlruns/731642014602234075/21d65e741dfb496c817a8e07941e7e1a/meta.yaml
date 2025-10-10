@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/21d65e741dfb496c817a8e07941e7e1a/artifacts
+end_time: 1760093373880
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: 21d65e741dfb496c817a8e07941e7e1a
+run_name: monumental-bee-321
+run_uuid: 21d65e741dfb496c817a8e07941e7e1a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760093364454
+status: 3
+tags: []
+user_id: sfed
