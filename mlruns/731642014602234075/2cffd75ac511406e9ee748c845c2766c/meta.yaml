@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/2cffd75ac511406e9ee748c845c2766c/artifacts
+end_time: 1760148894072
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: 2cffd75ac511406e9ee748c845c2766c
+run_name: enthused-dove-189
+run_uuid: 2cffd75ac511406e9ee748c845c2766c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760148888373
+status: 3
+tags: []
+user_id: sfed

@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/c8b973ad65fe4a548db51cb9144e513d/artifacts
+end_time: 1760148839755
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: c8b973ad65fe4a548db51cb9144e513d
+run_name: abundant-pug-269
+run_uuid: c8b973ad65fe4a548db51cb9144e513d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760148826512
+status: 3
+tags: []
+user_id: sfed

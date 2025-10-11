@@ -1,0 +1,85 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/data/data_ingestion.py
+    deps:
+    - path: notebooks\synthetic_asthma_dataset.csv
+      hash: md5
+      md5: a6cdac34a5c4c3fd31d136e827ff81cc
+      size: 965169
+    - path: src/data/data_ingestion.py
+      hash: md5
+      md5: f6a3f1ccd44a751fdc65611988f5a1e3
+      size: 3882
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: dbe58426762cabf858ef391777debdc6.dir
+      size: 947817
+      nfiles: 1
+  data_preprocessing:
+    cmd: python src/data/data_preprocessing.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: dbe58426762cabf858ef391777debdc6.dir
+      size: 947817
+      nfiles: 1
+    - path: src/data/data_preprocessing.py
+      hash: md5
+      md5: b27f7920d7eda6710101aa3afae7917e
+      size: 1842
+    outs:
+    - path: data/interim
+      hash: md5
+      md5: f847651430605aafaf5daaf6d81463ee.dir
+      size: 941657
+      nfiles: 1
+  model_building:
+    cmd: python src/model/model_building.py
+    deps:
+    - path: data/interim
+      hash: md5
+      md5: f847651430605aafaf5daaf6d81463ee.dir
+      size: 941657
+      nfiles: 1
+    - path: src/model/model_building.py
+      hash: md5
+      md5: 91192e9d5d561a9f1dc08ce2d930a3e0
+      size: 2925
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: 7809119b53ef2a4fc52c5e1f765070ce
+      size: 10774719
+  model_evaluation:
+    cmd: python src/model/model_evaluation.py
+    deps:
+    - path: models/model.pkl
+      hash: md5
+      md5: 7809119b53ef2a4fc52c5e1f765070ce
+      size: 10774719
+    - path: src/model/model_evaluation.py
+      hash: md5
+      md5: 1dc94090bb960d64be8ab8073be4161f
+      size: 4246
+    outs:
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: 09b17a38cfce5d2eeb1e198afd9aaca6
+      size: 82
+    - path: reports/metrics.json
+      hash: md5
+      md5: f8d0c9edb329c2a0638a3b9117604f9d
+      size: 144
+  model_registration:
+    cmd: python src/model/register_model.py
+    deps:
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: 09b17a38cfce5d2eeb1e198afd9aaca6
+      size: 82
+    - path: src/model/register_model.py
+      hash: md5
+      md5: 4518bf39a56b8a7ac26986cd2ea43c4b
+      size: 2995

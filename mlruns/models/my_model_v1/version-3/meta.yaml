@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1760149665739
+current_stage: Staging
+description: ''
+last_updated_timestamp: 1760149665771
+name: my_model_v1
+run_id: 2e0d507bcb5d4488a93e18c5d0cec98a
+run_link: ''
+source: mlflow-artifacts:/731642014602234075/2e0d507bcb5d4488a93e18c5d0cec98a/artifacts/model
+status: READY
+status_message: null
+storage_location: mlflow-artifacts:/731642014602234075/2e0d507bcb5d4488a93e18c5d0cec98a/artifacts/model
+user_id: null
+version: 3

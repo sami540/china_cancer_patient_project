@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/dd42497f9ad043deacbf167bddcb53db/artifacts
+end_time: 1760148928108
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: dd42497f9ad043deacbf167bddcb53db
+run_name: enthused-fox-668
+run_uuid: dd42497f9ad043deacbf167bddcb53db
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760148922484
+status: 3
+tags: []
+user_id: sfed

@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/0cbca6ae543e4b15bf8b335506119337/artifacts
+end_time: 1760149078772
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: 0cbca6ae543e4b15bf8b335506119337
+run_name: judicious-shrimp-225
+run_uuid: 0cbca6ae543e4b15bf8b335506119337
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760149073032
+status: 3
+tags: []
+user_id: sfed

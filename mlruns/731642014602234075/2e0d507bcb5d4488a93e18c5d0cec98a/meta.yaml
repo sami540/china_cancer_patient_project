@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/2e0d507bcb5d4488a93e18c5d0cec98a/artifacts
+end_time: 1760149661237
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: 2e0d507bcb5d4488a93e18c5d0cec98a
+run_name: mysterious-frog-814
+run_uuid: 2e0d507bcb5d4488a93e18c5d0cec98a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760149655498
+status: 3
+tags: []
+user_id: sfed
