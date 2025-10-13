@@ -3,9 +3,13 @@ stages:
   data_ingestion:
     cmd: python src/data/data_ingestion.py
     deps:
+    - path: data2/raw/synthetic_asthma_dataset.csv
+      hash: md5
+      md5: a6cdac34a5c4c3fd31d136e827ff81cc
+      size: 965169
     - path: src/data/data_ingestion.py
       hash: md5
-      md5: 7f83891c61deaee8fe4e7307990b7b2e
+      md5: 1961f02ff3ff6772ebbcea004b671b9e
       size: 4298
     outs:
     - path: data/raw

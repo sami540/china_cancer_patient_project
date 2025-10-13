@@ -5,6 +5,7 @@ stages:
     cmd: python src/data/data_ingestion.py
     deps:
       - src/data/data_ingestion.py
+      - data2/raw/synthetic_asthma_dataset.csv
     outs:
       - data/raw
 

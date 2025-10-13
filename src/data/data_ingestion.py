@@ -120,7 +120,7 @@ def save_data(df, data_path):
 
 
 def main():
-    df = load_data(r'C:\Users\sfed\Desktop\my-proj\china_cancer_patient_project\notebooks\synthetic_asthma_dataset.csv')
+    df = load_data(r'C:\Users\sfed\Desktop\my-proj\china_cancer_patient_project\data2\raw\synthetic_asthma_dataset.csv')
     df = preprocessing(df)
     save_data(df, './data')
 
