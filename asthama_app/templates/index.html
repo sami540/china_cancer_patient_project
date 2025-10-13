@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asthma Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 700px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #004aad;
+        }
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        label {
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            grid-column: span 2;
+            background: #004aad;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0066ff;
+        }
+        .result {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #007b00;
+        }
+        .error {
+            color: #d00000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🫁 Asthma Prediction App</h2>
+        <form action="/predict" method="POST">
+
+            <label>Age:</label><input type="number" name="Age" step="0.1" required>
+            
+            <label>Gender:</label>
+            <select name="Gender">
+                <option>Male</option>
+                <option>Female</option>
+            </select>
+
+            <label>BMI:</label><input type="number" name="BMI" step="0.1" required>
+            
+            <label>Smoking Status:</label>
+            <select name="Smoking_Status">
+                <option>Current</option>
+                <option>Former</option>
+                <option>Never</option>
+            </select>
+
+            <label>Family History:</label>
+            <select name="Family_History">
+                <option value="0">0</option>
+                <option value="1">1</option>
+            </select>
+
+            <label>Allergies:</label>
+            <select name="Allergies">
+                <option>Dust</option>
+                <option>Multiple</option>
+                <option>Pollen</option>
+                <option>Pets</option>
+            </select>
+
+            <label>Air Pollution Level:</label>
+            <select name="Air_Pollution_Level">
+                <option>Low</option>
+                <option>Moderate</option>
+                <option>High</option>
+            </select>
+
+            <label>Physical Activity Level:</label>
+            <select name="Physical_Activity_Level">
+                <option>Sedentary</option>
+                <option>Moderate</option>
+                <option>Active</option>
+            </select>
+
+            <label>Occupation Type:</label>
+            <select name="Occupation_Type">
+                <option>Indoor</option>
+                <option>Outdoor</option>
+            </select>
+
+            <label>Comorbidities:</label>
+            <select name="Comorbidities">
+                <option>Diabetes</option>
+                <option>Both</option>
+                <option>Hypertension</option>
+            </select>
+
+            <label>Medication Adherence:</label><input type="number" name="Medication_Adherence" required>
+
+            <label>Number of ER Visits:</label><input type="number" name="Number_of_ER_Visits" required>
+            
+            <label>Peak Expiratory Flow:</label><input type="number" name="Peak_Expiratory_Flow" step="0.1" required>
+
+            <label>FeNO Level:</label><input type="number" name="FeNO_Level" step="0.1" required>
+
+            <button type="submit">Predict</button>
+        </form>
+
+        {% if result %}
+        <div class="result">{{ result }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>

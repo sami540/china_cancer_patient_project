@@ -70,17 +70,28 @@ def doing_onehotencoding(df):
 
 
 
-def doing_ordinalencoding(df):
+def doing_ordinalencoding(df): 
     try:
-        logging.info('doing ordinal encoding ..........')
-        cols = ['Air_Pollution_Level', 'Physical_Activity_Level', 'Occupation_Type', 'Comorbidities']
-        encoder = OrdinalEncoder()
-        for col in cols:
+        logging.info("Starting manual ordinal encoding...")
+
+        ordinal_maps = {
+            'Air_Pollution_Level': {'Low': 0, 'Moderate': 1, 'High': 2},
+            'Physical_Activity_Level': {'Sedentary': 0, 'Moderate': 1, 'Active': 2},
+            'Occupation_Type': {'Indoor': 0, 'Outdoor': 1}
+        }
+
+        for col, mapping in ordinal_maps.items():
             if col in df.columns:
-                df[col] = encoder.fit_transform(df[[col]])
+                df[col] = df[col].map(mapping)
+                logging.info(f"Encoded column: {col}")
+            else:
+                logging.warning(f"Column '{col}' not found in DataFrame. Skipping.")
+
+        logging.info("Manual ordinal encoding completed successfully.")
         return df
+
     except Exception as e:
-        logging.error(f'The error is {e}')
+        logging.error(f"Error during manual ordinal encoding: {e}", exc_info=True)
         raise
 
 
