@@ -1,5 +1,5 @@
 import mlflow
-
+import os
 def promote_model():
     """
     Promote the latest 'Staging' model version to 'Production'
@@ -9,10 +9,10 @@ def promote_model():
     # Set up MLflow tracking URI for local environment
     # ---------------------------------------------------------------------------------
     # Make sure this matches the tracking URI used in your app.py and training script
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
 
     client = mlflow.MlflowClient()
-    model_name = "asthma_model"  # must match the name you used in your training script
+    model_name = "my_model_v2"  # must match the name you used in your training script
 
     # ---------------------------------------------------------------------------------
     # Get the latest version in 'Staging'
