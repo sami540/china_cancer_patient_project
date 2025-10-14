@@ -29,7 +29,7 @@ warnings.filterwarnings("ignore")
 
 # Below code block is for local use
 # -------------------------------------------------------------------------------------
-mlflow.set_tracking_uri('http://127.0.0.1:5000')
+mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
 # -------------------------------------------------------------------------------------
 
 

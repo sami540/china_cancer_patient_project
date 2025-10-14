@@ -6,13 +6,12 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import logging
 import mlflow
 import mlflow.sklearn
-import dagshub
 import os
 from src.logger import logging
 
 
 
-mlflow.set_tracking_uri('http://127.0.0.1:5000')
+mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
 
 def load_model(file_path: str):
     """Load the trained model from a file."""
@@ -81,7 +80,7 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
         raise
 
 def main():
-    mlflow.set_experiment("dvc-pipeline")
+    mlflow.set_experiment("local_ci_experiment")
     with mlflow.start_run() as run:
         try:
             logging.info('start evaluation')
