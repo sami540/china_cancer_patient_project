@@ -5,6 +5,7 @@ import logging
 import time
 from prometheus_client import Counter, Histogram, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
 import warnings
+import os
 
 warnings.filterwarnings("ignore")
 
@@ -20,7 +21,9 @@ logger = logging.getLogger(__name__)
 # ======================================================
 # MLflow Setup
 # ======================================================
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+os.makedirs("mlruns", exist_ok=True)
+mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
+
 MODEL_NAME = "my_model_v2"
 
 # ======================================================
