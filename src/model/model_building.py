@@ -72,7 +72,9 @@ def save_model(model, file_path: str) -> None:
 def main():
     try:
 
-        df = load_data(r'C:\Users\sfed\Desktop\my-proj\china_cancer_patient_project\data\interim\preprocessed_data_2.csv')
+        df = load_data(r'china_cancer_patient_project\data\interim\preprocessed_data_2.csv')
+        # df = load_data(r'https://raw.githubusercontent.com/sami540/china_cancer_patient_project/main/data_for_github/preprocessed_data_2.csv')
+        x_train, x_test, y_train, y_test = split_data(df, 0.2, 42)
         x_train, x_test, y_train, y_test = split_data(df, 0.2, 42)
         clf = training_model(x_train, y_train)
         save_model(clf, 'models/model.pkl')
