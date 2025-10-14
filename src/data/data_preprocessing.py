@@ -41,7 +41,7 @@ def save_data(df, data_path):
         raise    
 
 def main():
-    df = data_ingestion(r'china_cancer_patient_project\data\raw\preprocessed_data.csv')
+    df = data_ingestion('./data/raw/preprocessed_data.csv')
     # df = data_ingestion(r'https://raw.githubusercontent.com/sami540/china_cancer_patient_project/main/data_for_github/preprocessed_data.csv')
     cols = ['Age', 'BMI', 'Peak_Expiratory_Flow', 'FeNO_Level'] 
     df = remove_outliers_iqr(df, cols)

@@ -86,7 +86,7 @@ def main():
         try:
             logging.info('start evaluation')
             clf = load_model('./models/model.pkl')              
-            x_test, y_test = load_data(r'china_cancer_patient_project\splited_data\x_test.csv', r'china_cancer_patient_project\splited_data\y_test.csv')            
+            x_test, y_test = load_data('./splited_data/x_test.csv', './splited_data/y_test.csv')            
             # x_test, y_test = load_data(r'C:\Users\sfed\Desktop\my-proj\china_cancer_patient_project\splited_data\x_test.csv', r'C:\Users\sfed\Desktop\my-proj\china_cancer_patient_project\splited_data\y_test.csv')
             
            
