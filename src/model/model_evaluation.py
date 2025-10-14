@@ -11,7 +11,8 @@ from src.logger import logging
 
 
 
-mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
+mlflow.set_tracking_uri("https://dagshub.com/samiabdulsami122010/china_cancer_patient_project.mlflow")
+
 
 def load_model(file_path: str):
     """Load the trained model from a file."""
