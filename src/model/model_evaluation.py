@@ -11,8 +11,7 @@ from src.logger import logging
 
 
 
-mlflow.set_tracking_uri("https://dagshub.com/samiabdulsami122010/china_cancer_patient_project.mlflow")
-
+mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
 
 def load_model(file_path: str):
     """Load the trained model from a file."""
@@ -81,7 +80,7 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
         raise
 
 def main():
-    mlflow.set_experiment("local_ci_experiment")
+    mlflow.set_experiment("dvc-pipeline")
     with mlflow.start_run() as run:
         try:
             logging.info('start evaluation')
