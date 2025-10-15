@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 # ======================================================
 # MLflow Setup
 # ======================================================
-os.makedirs("mlruns", exist_ok=True)
-mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
+
 
 MODEL_NAME = "my_model_v2"
 

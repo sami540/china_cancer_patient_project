@@ -48,21 +48,18 @@ jobs:
       # ------------------------------
       # 5. Set up MLflow Tracking (Local)
       # ------------------------------
-      - name: Set up MLflow tracking directory
-        run: |
-          mkdir -p mlruns
-          echo "MLflow tracking set to local directory."
-        env:
-          MLFLOW_TRACKING_URI: "file://$(pwd)/mlruns"
 
-      - name: Start MLflow tracking server
+      - name: Start MLflow Tracking Server
         run: |
-          nohup mlflow server \
-          --backend-store-uri sqlite:///mlflow.db \
-          --default-artifact-root ./mlruns \
-          --host 127.0.0.1 \
-          --port 5000 &
-          sleep 5    
+         nohup mlflow server \
+         --backend-store-uri sqlite:///mlflow.db \
+         --default-artifact-root ./mlruns \
+         --host 127.0.0.1 \
+         --port 5000 &
+         sleep 10
+        env:
+          MLFLOW_TRACKING_URI: http://127.0.0.1:5000
+   
 
       # ------------------------------
       # 6. Run DVC Pipeline
