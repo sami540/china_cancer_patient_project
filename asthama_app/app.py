@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 # ======================================================
 # MLflow Setup
 # ======================================================
-os.makedirs("mlruns", exist_ok=True)
-mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
+mlflow.set_tracking_uri("http://localhost:5000")
+
 
 MODEL_NAME = "my_model_v2"
 
@@ -50,8 +50,10 @@ PREDICTION_COUNT = Counter(
 # ======================================================
 def get_latest_model_version(model_name):
     client = mlflow.MlflowClient()
-    versions = client.get_latest_versions(model_name, stages=["Staging", "None"])
-    return versions[0].version if versions else None
+    latest_version = client.get_latest_versions(model_name, stages=["Production"])
+    if not latest_version:
+        latest_version = client.get_latest_versions(model_name, stages=["None"])
+    return latest_version[0].version if latest_version else None
 
 model_version = get_latest_model_version(MODEL_NAME)
 if not model_version:

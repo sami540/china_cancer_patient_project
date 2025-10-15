@@ -59,7 +59,7 @@ import mlflow
 
 def promote_model():
     # Set up DagsHub credentials for MLflow tracking
-    mlflow.set_tracking_uri("file://" + os.path.abspath("mlruns"))
+    mlflow.set_tracking_uri("http://localhost:5000")
     client = mlflow.MlflowClient()
 
     model_name = "my_model_v2"
