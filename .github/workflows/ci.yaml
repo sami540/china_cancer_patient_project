@@ -1,4 +1,4 @@
-name: CI Pipeline (Local)
+name: CI Pipeline
 
 on:
   push:
@@ -26,49 +26,59 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-  
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Install DVC
-        run: pip install dvc    
-
-      - name: Start MLflow server
         run: |
-          nohup mlflow server \
-            --backend-store-uri mlruns \
-            --default-artifact-root mlruns \
-            --host 127.0.0.1 \
-            --port 5000 &
-          sleep 10
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install dvc
 
       - name: Run DVC pipeline
         run: dvc repro
 
-      - name: Run unit tests for model
+      - name: Run model tests
         run: python -m unittest tests/test_model.py
 
-      - name: Run unit tests for Flask app
-        run: python -m unittest tests/test_flask_app.py
-
-      - name: Promote model to production (Local)
+      - name: Promote model to production
         if: success()
         run: python scripts/promote_model.py
 
-      - name: Build Docker image locally
-        run: docker build -t mlops-local-app:latest .
+      - name: Run Flask app tests
+        if: success()
+        run: python -m unittest tests/test_flask_app.py
 
-      - name: Verify Docker image
-        run: docker images mlops-local-app
+      # ----------------------------------------------------------------
+      # 🧱 Local Docker + Minikube Deployment (No AWS)
+      # ----------------------------------------------------------------
 
-      - name: Run container (optional test)
+      - name: Start Minikube
         run: |
-          docker run -d -p 5000:5000 mlops-local-app:latest
-          sleep 10
-          docker ps
+          sudo apt-get update -y
+          sudo apt-get install -y conntrack
+          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          minikube start --driver=docker
 
-      - name: Stop and remove container (cleanup)
-        if: always()
+      - name: Build Docker image for local Minikube
         run: |
-          docker stop $(docker ps -q --filter ancestor=mlops-local-app:latest) || true
-          docker rm $(docker ps -a -q --filter ancestor=mlops-local-app:latest) || true
+          eval $(minikube docker-env)
+          docker build -t asthma-app:latest .
+
+      - name: Verify image built inside Minikube
+        run: docker images | grep asthma-app
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Create Kubernetes Secret (local)
+        run: |
+          kubectl create secret generic capstone-secret \
+            --from-literal=CAPSTONE_TEST=${{ secrets.CAPSTONE_TEST }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to local Kubernetes (Minikube)
+        run: |
+          kubectl apply -f deployment.yaml
+          kubectl get pods -A
