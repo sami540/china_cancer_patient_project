@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/7a322f4bff7e4c23881ff203d9b6469d/artifacts
+end_time: 1760542245774
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: 7a322f4bff7e4c23881ff203d9b6469d
+run_name: respected-moose-477
+run_uuid: 7a322f4bff7e4c23881ff203d9b6469d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760542234496
+status: 3
+tags: []
+user_id: sfed

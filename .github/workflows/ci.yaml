@@ -33,6 +33,15 @@ jobs:
       - name: Install DVC
         run: pip install dvc    
 
+      - name: Start MLflow server
+        run: |
+          nohup mlflow server \
+            --backend-store-uri mlruns \
+            --default-artifact-root mlruns \
+            --host 127.0.0.1 \
+            --port 5000 &
+          sleep 10
+
       - name: Run DVC pipeline
         run: dvc repro
 
