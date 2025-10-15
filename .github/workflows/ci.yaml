@@ -55,6 +55,15 @@ jobs:
         env:
           MLFLOW_TRACKING_URI: "file://$(pwd)/mlruns"
 
+      - name: Start MLflow tracking server
+        run: |
+          nohup mlflow server \
+          --backend-store-uri sqlite:///mlflow.db \
+          --default-artifact-root ./mlruns \
+          --host 127.0.0.1 \
+          --port 5000 &
+          sleep 5    
+
       # ------------------------------
       # 6. Run DVC Pipeline
       # ------------------------------
