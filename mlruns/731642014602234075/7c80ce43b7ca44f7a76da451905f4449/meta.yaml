@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/731642014602234075/7c80ce43b7ca44f7a76da451905f4449/artifacts
+end_time: 1760541898309
+entry_point_name: ''
+experiment_id: '731642014602234075'
+lifecycle_stage: active
+run_id: 7c80ce43b7ca44f7a76da451905f4449
+run_name: overjoyed-goose-576
+run_uuid: 7c80ce43b7ca44f7a76da451905f4449
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760541892718
+status: 3
+tags: []
+user_id: sfed
