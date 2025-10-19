@@ -7,6 +7,7 @@ import logging
 import mlflow
 import mlflow.sklearn
 import os
+from mlflow.models.signature import infer_signature
 
 # Setup logging
 from src.logger import logging
@@ -87,34 +88,42 @@ def main():
     with mlflow.start_run() as run:
         try:
             logging.info('Start evaluation')
-            
+
             # Load model
             clf = load_model('./models/model.pkl')
-            
-            # Load test data (relative paths)
+
+            # Load test data
             x_test, y_test = load_data('./splited_data/x_test.csv', './splited_data/y_test.csv')
-            
+
             # Evaluate model
             metrics = model_evaluation(clf, x_test, y_test)
-            
+
             # Save metrics locally
             save_metrics(metrics, 'reports/metrics.json')
-            
+
             # Log metrics to MLflow
             for name, value in metrics.items():
                 mlflow.log_metric(name, value)
-            
+
             # Log model parameters to MLflow
             if hasattr(clf, 'get_params'):
                 for param_name, param_value in clf.get_params().items():
                     mlflow.log_param(param_name, param_value)
-            
-            # Log model to MLflow
-            mlflow.sklearn.log_model(clf, artifact_path="model")
-            
-            # Save model info
+
+            # Infer model signature to avoid Windows path issues
+            signature = infer_signature(x_test, clf.predict(x_test))
+
+            # Log model to MLflow (relative artifact path)
+            mlflow.sklearn.log_model(
+                clf,
+                artifact_path="model",
+                signature=signature,
+                input_example=x_test.head(5)
+            )
+
+            # Save model info locally
             save_model_info(run.info.run_id, "model", 'reports/experiment_info.json')
-            
+
             # Log metrics file as artifact
             mlflow.log_artifact('reports/metrics.json')
 
