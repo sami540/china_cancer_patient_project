@@ -10,11 +10,8 @@ import os
 from src.logger import logging
 import dagshub
 
-dagshub.init(
-    repo_owner=os.getenv("DAGSHUB_USERNAME"),
-    repo_name=os.getenv("DAGSHUB_REPO"),
-    mlflow=True
-)
+mlflow.set_tracking_uri(os.getenv("DAGSHUB_TRACKING_URI"))
+MODEL_NAME = "my_model_v2"
 
 
 def load_model(file_path: str):
