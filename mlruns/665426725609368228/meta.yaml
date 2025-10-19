@@ -1,0 +1,6 @@
+artifact_location: file:///C:/Users/dell%20pc/Desktop/mlops/china_cancer_patient_project/mlruns/665426725609368228
+creation_time: 1760868044253
+experiment_id: '665426725609368228'
+last_update_time: 1760868044253
+lifecycle_stage: active
+name: dvc-pipeline

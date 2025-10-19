@@ -1,79 +1,44 @@
-from flask import Flask, render_template, request
+import streamlit as st
 import mlflow
 import pandas as pd
-import logging
+import joblib
 import time
-from prometheus_client import Counter, Histogram, generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST
-import warnings
 import os
+from collections import Counter
+import numpy as np
+import warnings
 
 warnings.filterwarnings("ignore")
 
 # ======================================================
-# Logging Setup
-# ======================================================
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-# ======================================================
 # MLflow Setup
 # ======================================================
-mlflow.set_tracking_uri("http://localhost:5000")
-
-
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 MODEL_NAME = "my_model_v2"
 
-# ======================================================
-# Flask App Initialization
-# ======================================================
-app = Flask(__name__)
-
-# ======================================================
-# Prometheus Metrics
-# ======================================================
-registry = CollectorRegistry()
-REQUEST_COUNT = Counter(
-    "app_request_count", "Total number of requests", ["method", "endpoint"], registry=registry
-)
-REQUEST_LATENCY = Histogram(
-    "app_request_latency_seconds", "Request latency (seconds)", ["endpoint"], registry=registry
-)
-PREDICTION_COUNT = Counter(
-    "model_prediction_count", "Number of predictions per class", ["prediction"], registry=registry
-)
-
-# ======================================================
-# Load Model from MLflow Registry
-# ======================================================
 def get_latest_model_version(model_name):
     client = mlflow.MlflowClient()
-    latest_version = client.get_latest_versions(model_name, stages=["Production"])
+    latest_version = client.get_latest_versions(model_name, stages=["Staging"])
     if not latest_version:
         latest_version = client.get_latest_versions(model_name, stages=["None"])
     return latest_version[0].version if latest_version else None
 
 model_version = get_latest_model_version(MODEL_NAME)
 if not model_version:
-    raise RuntimeError(f"❌ No model version found for '{MODEL_NAME}' in MLflow registry!")
+    st.error(f"No model version found for '{MODEL_NAME}' in MLflow registry!")
+    st.stop()
 
 model_uri = f"models:/{MODEL_NAME}/{model_version}"
-logger.info(f"🔄 Loading model from: {model_uri}")
 model = mlflow.pyfunc.load_model(model_uri)
-logger.info("✅ Model loaded successfully.")
-
-# Try to get input schema (optional)
-try:
-    input_schema = model.metadata.get_input_schema()
-    logger.info(f"📊 Model input schema: {[f.name for f in input_schema]}")
-except Exception as e:
-    logger.warning("⚠️ Could not load model input schema from MLflow.")
-    input_schema = None
 
 # ======================================================
-# Expected Columns (match training time)
+# Metrics (simple in-memory counters)
+# ======================================================
+REQUEST_COUNT = 0
+PREDICTION_COUNT = Counter()
+
+# ======================================================
+# Expected Columns
 # ======================================================
 EXPECTED_COLUMNS = [
     "Age","BMI","Family_History","Air_Pollution_Level","Physical_Activity_Level",
@@ -86,72 +51,72 @@ EXPECTED_COLUMNS = [
 ]
 
 # ======================================================
-# Routes
+# Streamlit UI
 # ======================================================
-@app.route("/")
-def home():
-    REQUEST_COUNT.labels(method="GET", endpoint="/").inc()
+st.title("Asthma Risk Prediction")
+
+with st.form("prediction_form"):
+    age = st.number_input("Age", min_value=0)
+    bmi = st.number_input("BMI", min_value=0.0)
+    family_history = st.selectbox("Family History", [0,1])
+    air_pollution = st.selectbox("Air Pollution Level", ["Low","Moderate","High"])
+    physical_activity = st.selectbox("Physical Activity Level", ["Sedentary","Moderate","Active"])
+    occupation = st.selectbox("Occupation Type", ["Indoor","Outdoor"])
+    medication_adherence = st.selectbox("Medication Adherence", [0,1])
+    er_visits = st.number_input("Number of ER Visits", min_value=0)
+    peak_flow = st.number_input("Peak Expiratory Flow", min_value=0.0)
+    feno = st.number_input("FeNO Level", min_value=0.0)
+    gender = st.selectbox("Gender", ["Female","Male","Other"])
+    smoking = st.selectbox("Smoking Status", ["Current","Former","Never"])
+    allergies = st.selectbox("Allergies", ["Dust","Multiple","Pets","Pollen"])
+    comorbidities = st.selectbox("Comorbidities", ["Both","Diabetes","Hypertension"])
+    submitted = st.form_submit_button("Predict")
+
+if submitted:
+    REQUEST_COUNT += 1
     start_time = time.time()
-    response = render_template("index.html", result=None)
-    REQUEST_LATENCY.labels(endpoint="/").observe(time.time() - start_time)
-    return response
-
-@app.route("/predict", methods=["POST"])
-def predict():
-    REQUEST_COUNT.labels(method="POST", endpoint="/predict").inc()
-    start_time = time.time()
-
-    try:
-        air_pollution_map = {"Low": 0, "Moderate": 1, "High": 2}
-        physical_activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2}
-        occupation_type_map = {'Indoor': 0, 'Outdoor': 1}
-        
-        # Collect form data
-        data = pd.DataFrame([{
-    "Age": float(request.form["Age"]),
-    "BMI": float(request.form["BMI"]),
-    "Family_History": int(request.form["Family_History"]),
-    "Air_Pollution_Level": air_pollution_map[request.form["Air_Pollution_Level"]],
-    "Physical_Activity_Level": physical_activity_map[request.form["Physical_Activity_Level"]],
-    "Occupation_Type": occupation_type_map[request.form["Occupation_Type"]],
-    "Medication_Adherence": int(request.form["Medication_Adherence"]),
-    "Number_of_ER_Visits": int(request.form["Number_of_ER_Visits"]),
-    "Peak_Expiratory_Flow": float(request.form["Peak_Expiratory_Flow"]),
-    "FeNO_Level": float(request.form["FeNO_Level"]),
-    "Gender": request.form["Gender"],
-    "Smoking_Status": request.form["Smoking_Status"],
-    "Allergies": request.form["Allergies"],
-    "Comorbidities": request.form["Comorbidities"]
-}])
-
-        data = pd.get_dummies(data)
-
-# Drop any accidental columns named like the target
-        if 'Has_Asthma' in data.columns:
-          data = data.drop(columns=['Has_Asthma'])
-
-        data = data.reindex(columns=EXPECTED_COLUMNS, fill_value=0)
-
-        # Predict
-        prediction = model.predict(data)[0]
-        result = "✅ No Asthma" if prediction == 0 else "😷 Has Asthma"
-
-        PREDICTION_COUNT.labels(prediction=str(prediction)).inc()
-        REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start_time)
-
-        return render_template("index.html", result=result)
-
-    except Exception as e:
-        logger.error(f"❌ Prediction failed: {e}")
-        return render_template("index.html", result=f"Error: {str(e)}")
-
-@app.route("/metrics")
-def metrics():
-    """Expose Prometheus metrics."""
-    return generate_latest(registry), 200, {"Content-Type": CONTENT_TYPE_LATEST}
-
-# ======================================================
-# Main Entry Point
-# ======================================================
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8000)
+    
+    # Mapping
+    air_pollution_map = {"Low": 0, "Moderate": 1, "High": 2}
+    physical_activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2}
+    occupation_map = {"Indoor": 0, "Outdoor": 1}
+    
+    # Prepare input
+    data = pd.DataFrame([{
+        "Age": age,
+        "BMI": bmi,
+        "Family_History": family_history,
+        "Air_Pollution_Level": air_pollution_map[air_pollution],
+        "Physical_Activity_Level": physical_activity_map[physical_activity],
+        "Occupation_Type": occupation_map[occupation],
+        "Medication_Adherence": medication_adherence,
+        "Number_of_ER_Visits": er_visits,
+        "Peak_Expiratory_Flow": peak_flow,
+        "FeNO_Level": feno,
+        "Gender_Female": 1 if gender=="Female" else 0,
+        "Gender_Male": 1 if gender=="Male" else 0,
+        "Gender_Other": 1 if gender=="Other" else 0,
+        "Smoking_Status_Current": 1 if smoking=="Current" else 0,
+        "Smoking_Status_Former": 1 if smoking=="Former" else 0,
+        "Smoking_Status_Never": 1 if smoking=="Never" else 0,
+        "Allergies_Dust": 1 if allergies=="Dust" else 0,
+        "Allergies_Multiple": 1 if allergies=="Multiple" else 0,
+        "Allergies_Pets": 1 if allergies=="Pets" else 0,
+        "Allergies_Pollen": 1 if allergies=="Pollen" else 0,
+        "Comorbidities_Both": 1 if comorbidities=="Both" else 0,
+        "Comorbidities_Diabetes": 1 if comorbidities=="Diabetes" else 0,
+        "Comorbidities_Hypertension": 1 if comorbidities=="Hypertension" else 0
+    }])
+    
+    data = data.reindex(columns=EXPECTED_COLUMNS, fill_value=0)
+    
+    prediction = model.predict(data)[0]
+    result_text = "✅ No Asthma" if prediction==0 else "😷 Has Asthma"
+    
+    PREDICTION_COUNT[str(prediction)] += 1
+    latency = time.time() - start_time
+    
+    st.write(f"Prediction: {result_text}")
+    st.write(f"Request processed in {latency:.2f} seconds")
+    st.write(f"Total Requests: {REQUEST_COUNT}")
+    st.write(f"Prediction counts: {dict(PREDICTION_COUNT)}")

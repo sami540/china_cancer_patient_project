@@ -3,10 +3,6 @@ stages:
   data_ingestion:
     cmd: python src/data/data_ingestion.py
     deps:
-    - path: data2/raw/synthetic_asthma_dataset.csv
-      hash: md5
-      md5: a6cdac34a5c4c3fd31d136e827ff81cc
-      size: 965169
     - path: src/data/data_ingestion.py
       hash: md5
       md5: 6ed0be62efe461eac53ffb1c2840be0f
@@ -61,12 +57,12 @@ stages:
       size: 9220959
     - path: src/model/model_evaluation.py
       hash: md5
-      md5: 0b6fb3795217f5cbe77e769049220fc6
-      size: 4360
+      md5: 1f2c3bbf99694aee441f8a587d9ce6dc
+      size: 4369
     outs:
     - path: reports/experiment_info.json
       hash: md5
-      md5: 7d8c862b2c7fb5fdf050040dadcf6f9e
+      md5: db2a945e89a4e28f26b4daaa8020322d
       size: 82
     - path: reports/metrics.json
       hash: md5
@@ -77,9 +73,9 @@ stages:
     deps:
     - path: reports/experiment_info.json
       hash: md5
-      md5: 7d8c862b2c7fb5fdf050040dadcf6f9e
+      md5: db2a945e89a4e28f26b4daaa8020322d
       size: 82
     - path: src/model/register_model.py
       hash: md5
-      md5: 7c152c504e76ed77603297d7055fdf89
-      size: 2995
+      md5: 46a8476a5decad8b71548a543c695084
+      size: 2990

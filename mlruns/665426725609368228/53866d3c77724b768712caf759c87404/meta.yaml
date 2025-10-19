@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/dell%20pc/Desktop/mlops/china_cancer_patient_project/mlruns/665426725609368228/53866d3c77724b768712caf759c87404/artifacts
+end_time: 1760868053328
+entry_point_name: ''
+experiment_id: '665426725609368228'
+lifecycle_stage: active
+run_id: 53866d3c77724b768712caf759c87404
+run_name: gaudy-cat-210
+run_uuid: 53866d3c77724b768712caf759c87404
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760868044569
+status: 3
+tags: []
+user_id: dell pc
