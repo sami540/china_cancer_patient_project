@@ -9,3 +9,4 @@ streamlit
 gradio
 dagshub
 -e .
+streamlit
