@@ -6,6 +6,12 @@ jobs:
   project-testing:
     runs-on: ubuntu-latest
 
+    env:
+      # MLflow / DagsHub setup (available to all steps)
+      DAGSHUB_TRACKING_URI: ${{ secrets.DAGSHUB_TRACKING_URI }}
+      MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_API_TOKEN }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -35,12 +41,11 @@ jobs:
         run: |
           python -m unittest tests/test_model.py
 
-      - name: Promote model to production
+      - name: Evaluate and promote model
         if: success()
-        env:
-          DAGSHUB_TRACKING_URI: "https://dagshub.com/samiabdulsami122010/china_cancer_patient_project.mlflow"
-          DAGSHUB_API_TOKEN: ${{ secrets.DAGSHUB_API_TOKEN }}
-        run: python scripts/promote_model.py
+        run: |
+          python src/model/model_evaluation.py
+          python scripts/promote_model.py
 
       - name: Run Flask app tests
         if: success()
