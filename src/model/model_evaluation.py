@@ -8,7 +8,7 @@ import mlflow
 import mlflow.sklearn
 import os
 from src.logger import logging
-
+import dagshub
 
 dagshub.init(
     repo_owner=os.getenv("DAGSHUB_USERNAME"),
