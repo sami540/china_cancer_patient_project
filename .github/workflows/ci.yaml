@@ -44,7 +44,7 @@ jobs:
 
       - name: Register Model
         run: |
-          python scripts/register_model.py
+          python src/model/register_model.py
     
       - name: Evaluate and promote model
         if: success()
