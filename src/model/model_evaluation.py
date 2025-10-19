@@ -99,7 +99,7 @@ def main():
             metrics = model_evaluation(clf, x_test, y_test)
 
             # Save metrics locally
-            save_metrics(metrics, 'reports/metrics.json')
+            save_metrics(metrics, './reports/metrics.json')
 
             # Log metrics to MLflow
             for name, value in metrics.items():
@@ -122,10 +122,10 @@ def main():
             )
 
             # Save model info locally
-            save_model_info(run.info.run_id, "model", 'reports/experiment_info.json')
+            save_model_info(run.info.run_id, "model", './reports/experiment_info.json')
 
             # Log metrics file as artifact
-            mlflow.log_artifact('reports/metrics.json')
+            mlflow.log_artifact('./reports/metrics.json')
 
         except Exception as e:
             logging.error('Failed to complete the model evaluation process: %s', e)
