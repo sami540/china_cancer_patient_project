@@ -6,8 +6,7 @@ from mlflow.tracking import MlflowClient
 MODEL_NAME = "my_model_v2"
 
 def promote_model():
-    # Set up MLflow tracking URI
-mlflow.set_tracking_uri("DAGSHUB_TRACKING_URI")
+    mlflow.set_tracking_uri("DAGSHUB_TRACKING_URI")
 
 
     client = mlflow.MlflowClient()
