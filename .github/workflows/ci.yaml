@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: setup python
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
@@ -23,11 +23,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: install dependencies
+      - name: Install dependencies
         run: |
           pip install -r requirements.txt
 
-      - name: run pipeline
+      - name: Run DVC pipeline
         run: |
           dvc repro
 
@@ -37,6 +37,10 @@ jobs:
 
       - name: Promote model to production
         if: success()
+        env:
+          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          DAGSHUB_REPO: ${{ secrets.DAGSHUB_REPO }}
+          DAGSHUB_API_TOKEN: ${{ secrets.DAGSHUB_API_TOKEN }}
         run: python scripts/promote_model.py
 
       - name: Run Flask app tests
@@ -48,16 +52,11 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          SPACE_NAME=wadood229955       # Replace with your space name
-          USERNAME=Asthma_detection_app    # Replace with your HF username
+          USERNAME=wadood229955
+          SPACE_NAME=Asthma_detection_app
 
-          # Clone HF Space
           git clone https://huggingface.co/spaces/$USERNAME/$SPACE_NAME space_repo
-
-          # Copy files (excluding .git)
           rsync -av --exclude '.git' asthama_app/ space_repo/
-
-          # Commit & Push
           cd space_repo
           git add .
           git commit -m "Deploy app via CI/CD" || echo "No changes to commit"

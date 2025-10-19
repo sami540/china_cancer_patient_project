@@ -29,8 +29,11 @@ warnings.filterwarnings("ignore")
 
 # Below code block is for local use
 # -------------------------------------------------------------------------------------
-mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-# -------------------------------------------------------------------------------------
+dagshub.init(
+    repo_owner=os.getenv("DAGSHUB_USERNAME"),
+    repo_name=os.getenv("DAGSHUB_REPO"),
+    mlflow=True
+)
 
 
 def load_model_info(file_path: str) -> dict:

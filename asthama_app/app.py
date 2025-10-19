@@ -13,7 +13,13 @@ warnings.filterwarnings("ignore")
 # ======================================================
 # MLflow Setup
 # ======================================================
-mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+import dagshub
+dagshub.init(
+    repo_owner=os.getenv("DAGSHUB_USERNAME"),
+    repo_name=os.getenv("DAGSHUB_REPO"),
+    mlflow=True
+)
+# mlflow.set_tracking_uri("https://dagshub.com/samiabdulsami122010/china_cancer_patient_project.mlflow")
 MODEL_NAME = "my_model_v2"
 
 def get_latest_model_version(model_name):

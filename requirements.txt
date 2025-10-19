@@ -1,5 +1,5 @@
 # # local package
-
+-e .
 # # external requirements
 # click
 # Sphinx
@@ -14,3 +14,4 @@ prometheus_client
 numpy==2.2.1
 pandas==2.2.3
 dvc
+dagshub
