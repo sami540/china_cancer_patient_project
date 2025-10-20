@@ -1,77 +1,40 @@
-import json
 import mlflow
-import logging
-from src.logger import logging
 import os
-import dagshub
-import warnings
+import logging
 
-warnings.simplefilter("ignore", UserWarning)
-warnings.filterwarnings("ignore")
+MODEL_NAME = "my_model_v2"
 
-# -------------------------------------------------------------------------------------
-# Production use: Setup DagsHub + MLflow tracking
-# -------------------------------------------------------------------------------------
-dagshub_token = os.getenv("DAGSHUB_API_TOKEN")
-dagshub_uri = os.getenv("DAGSHUB_TRACKING_URI")
-
-if not dagshub_token:
-    raise EnvironmentError("DAGSHUB_API_TOKEN environment variable is not set")
-if not dagshub_uri:
-    raise EnvironmentError("DAGSHUB_TRACKING_URI environment variable is not set")
-
-os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("DAGSHUB_USERNAME", "")
-os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
-
-mlflow.set_tracking_uri(dagshub_uri)
-# -------------------------------------------------------------------------------------
-
-
-def load_model_info(file_path: str) -> dict:
-    """Load model info from JSON file."""
+def main():
     try:
-        with open(file_path, 'r') as file:
-            model_info = json.load(file)
-        logging.debug('Model info loaded from %s', file_path)
-        return model_info
-    except FileNotFoundError:
-        logging.error('File not found: %s', file_path)
-        raise
-    except Exception as e:
-        logging.error('Unexpected error occurred while loading the model info: %s', e)
-        raise
-
-
-def register_model(model_name: str, model_info: dict):
-    """Register and promote model to Staging."""
-    try:
-        model_uri = f"runs:/{model_info['run_id']}/{model_info['model_path']}"
-        model_version = mlflow.register_model(model_uri, model_name)
+        dagshub_uri = os.getenv("DAGSHUB_TRACKING_URI")
+        mlflow.set_tracking_uri(dagshub_uri)
+        os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("DAGSHUB_API_TOKEN")
+        os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_API_TOKEN")
 
         client = mlflow.tracking.MlflowClient()
+        experiment = client.get_experiment_by_name("Default")  # or your custom name
+        runs = client.search_runs(experiment_ids=[experiment.experiment_id],
+                                  order_by=["attributes.start_time DESC"],
+                                  max_results=1)
+        latest_run = runs[0]
+        run_id = latest_run.info.run_id
+
+        model_uri = f"runs:/{run_id}/model"
+        model_version = mlflow.register_model(model_uri, MODEL_NAME)
+
         client.transition_model_version_stage(
-            name=model_name,
+            name=MODEL_NAME,
             version=model_version.version,
             stage="Staging"
         )
 
-        logging.debug(f"✅ Model {model_name} version {model_version.version} registered and moved to Staging.")
-    except Exception as e:
-        logging.error('Error during model registration: %s', e)
-        raise
+        print(f"✅ Model {MODEL_NAME} version {model_version.version} registered and transitioned to Staging.")
 
-
-def main():
-    try:
-        model_info_path = 'reports/experiment_info.json'
-        model_info = load_model_info(model_info_path)
-
-        model_name = "my_model_v2"
-        register_model(model_name, model_info)
     except Exception as e:
         logging.error('Failed to complete the model registration process: %s', e)
         print(f"Error: {e}")
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
+
+
