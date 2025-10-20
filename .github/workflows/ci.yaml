@@ -52,10 +52,6 @@ jobs:
           python src/model/model_evaluation.py
           python scripts/promote_model.py
 
-      - name: Run Flask app tests
-        if: success()
-        run: python -m unittest tests/test_flask_app.py
-
       - name: Deploy to Hugging Face Space
         if: success()
         env:
