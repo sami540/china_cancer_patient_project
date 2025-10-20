@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          
+
       - name: Set DagsHub token
         run: echo "DAGSHUB_TOKEN=${{ secrets.DAGSHUB_TOKEN }}" >> $GITHUB_ENV    
 
@@ -54,6 +54,9 @@ jobs:
         run: |
           python src/model/model_evaluation.py
           python scripts/promote_model.py
+
+      - name: Set HF_TOKEN
+        run: echo "HF_TOKEN=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV     
 
       - name: Deploy to Hugging Face Space
         if: success()
