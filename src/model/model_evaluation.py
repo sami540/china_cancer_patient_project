@@ -13,7 +13,7 @@ from mlflow.models.signature import infer_signature
 from src.logger import logging
 
 # Setup MLflow Tracking URI (supports both local + DagsHub)
-dagshub_token = os.getenv("DAGSHUB_TOKEN")  # you can rename CAPSTONE_TEST → DAGSHUB_TOKEN for clarity
+dagshub_token = os.getenv("DAGSHUB_API_TOKEN")  # you can rename CAPSTONE_TEST → DAGSHUB_TOKEN for clarity
 
 if not dagshub_token:
     raise EnvironmentError("❌ DAGSHUB_TOKEN environment variable is not set")
