@@ -142,7 +142,7 @@ jobs:
         if: success()
         run: |
           python src/model/model_evaluation.py
-          python src/model/promote_model.py
+          python scripts/promote_model.py
 
       # 🔟 Set Hugging Face token
       - name: Set HF_TOKEN
