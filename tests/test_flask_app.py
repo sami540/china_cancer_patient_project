@@ -1,37 +1,48 @@
 import unittest
-from asthama_app.app import app
+import importlib
 
-class FlaskAppTests(unittest.TestCase):
+class StreamlitAppTests(unittest.TestCase):
+    def test_import_app(self):
+        """
+        Test that the Streamlit app can be imported successfully
+        without runtime errors (e.g., missing dependencies, syntax issues).
+        """
+        try:
+            module = importlib.import_module("asthama_app.app")
+        except Exception as e:
+            self.fail(f"Failed to import Streamlit app: {e}")
 
-    def setUp(self):
-        self.app = app.test_client()
+    def test_prediction_function(self):
+        """
+        Test your model prediction function directly
+        (not through Streamlit UI).
+        """
+        from src.model.predict import predict_asthma  # adjust this path to your actual prediction function
 
-    def test_home_page(self):
-        response = self.app.get('/')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'<title>Asthma Prediction</title>', response.data)
+        sample_input = {
+            "Age": 45,
+            "BMI": 23.4,
+            "Family_History": 1,
+            "Air_Pollution_Level": "Moderate",
+            "Physical_Activity_Level": "Active",
+            "Occupation_Type": "Indoor",
+            "Allergies": "Dust",
+            "Comorbidities": "None",
+            "Medication_Adherence": 1,
+            "Number_of_ER_Visits": 0,
+            "Peak_Expiratory_Flow": 350.5,
+            "FeNO_Level": 15.2,
+            "Gender": "Male",
+            "Smoking_Status": "Never"
+        }
 
-    def test_predict_page(self):
-        # Provide sample valid data matching your form
-        response = self.app.post('/predict', data={
-            'Age': 45,
-            'BMI': 23.4,
-            'Family_History': 1,
-            'Air_Pollution_Level': 'Moderate',
-            'Physical_Activity_Level': 'Active',
-            'Occupation_Type': 'Indoor',
-            'Allergies': 'Dust',
-            'Comorbidities': 'None',
-            'Medication_Adherence': 1,
-            'Number_of_ER_Visits': 0,
-            'Peak_Expiratory_Flow': 350.5,
-            'FeNO_Level': 15.2,
-            'Gender': 'Male',
-            'Smoking_Status': 'Never'
-        })
-        self.assertEqual(response.status_code, 200)
-        # Adjust to what your app actually returns
-        self.assertTrue(
-            b'Asthma' in response.data or b'No Asthma' in response.data,
-            "Response should contain either 'Asthma' or 'No Asthma'"
-        )
+        try:
+            result = predict_asthma(sample_input)
+        except Exception as e:
+            self.fail(f"Prediction function crashed: {e}")
+
+        # Example: assert that output is a string or label
+        self.assertIn(result, ["Asthma", "No Asthma"], "Prediction output is invalid")
+
+if __name__ == "__main__":
+    unittest.main()
