@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/dell%20pc/Desktop/mlops/china_cancer_patient_project/mlruns/593657139905734557/4ee5a66e60ab4a159d7e2239330eba59/artifacts
+end_time: 1760957780473
+entry_point_name: ''
+experiment_id: '593657139905734557'
+lifecycle_stage: active
+run_id: 4ee5a66e60ab4a159d7e2239330eba59
+run_name: calm-seal-836
+run_uuid: 4ee5a66e60ab4a159d7e2239330eba59
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760957772797
+status: 3
+tags: []
+user_id: dell pc

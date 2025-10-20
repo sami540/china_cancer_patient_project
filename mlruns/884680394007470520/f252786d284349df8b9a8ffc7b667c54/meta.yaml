@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/dell%20pc/Desktop/mlops/china_cancer_patient_project/mlruns/884680394007470520/f252786d284349df8b9a8ffc7b667c54/artifacts
+end_time: 1760973352514
+entry_point_name: ''
+experiment_id: '884680394007470520'
+lifecycle_stage: active
+run_id: f252786d284349df8b9a8ffc7b667c54
+run_name: learned-donkey-552
+run_uuid: f252786d284349df8b9a8ffc7b667c54
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760973345456
+status: 3
+tags: []
+user_id: dell pc

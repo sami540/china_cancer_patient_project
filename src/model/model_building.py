@@ -76,6 +76,7 @@ def main():
         # df = load_data(r'https://raw.githubusercontent.com/sami540/china_cancer_patient_project/main/data_for_github/preprocessed_data_2.csv')
         x_train, x_test, y_train, y_test = split_data(df, 0.2, 42)
         x_train, x_test, y_train, y_test = split_data(df, 0.2, 42)
+        os.makedirs("models", exist_ok=True)
         clf = training_model(x_train, y_train)
         save_model(clf, 'models/model.pkl')
         logging.info('model saved successufullly !')

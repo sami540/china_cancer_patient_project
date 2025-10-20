@@ -9,12 +9,30 @@ import mlflow.sklearn
 import os
 from mlflow.models.signature import infer_signature
 
-# Setup logging
+# Custom logging setup
 from src.logger import logging
 
-# DAGsHub MLflow tracking URI from environment variable (CI-friendly)
-mlflow.set_tracking_uri(os.getenv("DAGSHUB_TRACKING_URI"))
-MODEL_NAME = "my_model_v2"
+# Setup MLflow Tracking URI (supports both local + DagsHub)
+dagshub_token = os.getenv("DAGSHUB_TOKEN")  # you can rename CAPSTONE_TEST → DAGSHUB_TOKEN for clarity
+
+if not dagshub_token:
+    raise EnvironmentError("❌ DAGSHUB_TOKEN environment variable is not set")
+
+# Set DagsHub authentication for MLflow
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token  # e.g., "wadood123"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+# Define your DagsHub repo info
+dagshub_url = "https://dagshub.com"
+repo_owner = "samiabdulsami122010"          # e.g., "wadood123"
+repo_name = "china_cancer_patient_project"      # your project repo name
+
+# Set the MLflow tracking URI for DagsHub
+mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
+
+# Optional: print to verify
+print("✅ MLflow Tracking URI set to:", mlflow.get_tracking_uri())
+
 
 def load_model(file_path: str):
     """Load the trained model from a file."""
@@ -30,16 +48,18 @@ def load_model(file_path: str):
         logging.error('Unexpected error occurred while loading the model: %s', e)
         raise
 
+
 def load_data(x_path: str, y_path: str):
     """Load test features and labels."""
     try:
         logging.info('Loading data for testing ...')
         x_test = pd.read_csv(x_path)
-        y_test = pd.read_csv(y_path)
+        y_test = pd.read_csv(y_path).squeeze()  # Ensure Series format
         return x_test, y_test
     except Exception as e:
         logging.error(f'Error loading data: {e}')
         raise
+
 
 def model_evaluation(model, x_test, y_test):
     """Evaluate model and return metrics."""
@@ -49,9 +69,9 @@ def model_evaluation(model, x_test, y_test):
 
         metrics_dict = {
             'accuracy': accuracy_score(y_test, y_pred),
-            'precision': precision_score(y_test, y_pred),
-            'recall': recall_score(y_test, y_pred),
-            'f1': f1_score(y_test, y_pred)
+            'precision': precision_score(y_test, y_pred, zero_division=0),
+            'recall': recall_score(y_test, y_pred, zero_division=0),
+            'f1': f1_score(y_test, y_pred, zero_division=0)
         }
 
         logging.info('Model evaluation metrics calculated')
@@ -59,6 +79,7 @@ def model_evaluation(model, x_test, y_test):
     except Exception as e:
         logging.error(f'Error during evaluation: {e}')
         raise
+
 
 def save_metrics(metrics: dict, file_path: str):
     """Save evaluation metrics to a JSON file."""
@@ -70,6 +91,7 @@ def save_metrics(metrics: dict, file_path: str):
     except Exception as e:
         logging.error('Error saving metrics: %s', e)
         raise
+
 
 def save_model_info(run_id: str, model_path: str, file_path: str):
     """Save model run ID and path to a JSON file."""
@@ -83,11 +105,13 @@ def save_model_info(run_id: str, model_path: str, file_path: str):
         logging.error('Error saving model info: %s', e)
         raise
 
+
 def main():
-    mlflow.set_experiment("protfolio-pipeline")
+    mlflow.set_experiment("pipeline_2")
+
     with mlflow.start_run() as run:
         try:
-            logging.info('Start evaluation')
+            logging.info('Start model evaluation')
 
             # Load model
             clf = load_model('./models/model.pkl')
@@ -110,10 +134,10 @@ def main():
                 for param_name, param_value in clf.get_params().items():
                     mlflow.log_param(param_name, param_value)
 
-            # Infer model signature to avoid Windows path issues
-            signature = infer_signature(x_test, clf.predict(x_test))
+            # Infer model signature (safe on sample)
+            signature = infer_signature(x_test.head(10), clf.predict(x_test.head(10)))
 
-            # Log model to MLflow (relative artifact path)
+            # Log model to MLflow
             mlflow.sklearn.log_model(
                 clf,
                 artifact_path="model",
@@ -121,15 +145,18 @@ def main():
                 input_example=x_test.head(5)
             )
 
-            # Save model info locally
-            save_model_info(run.info.run_id, "model", './reports/experiment_info.json')
+            # Save model info (with full MLflow URI path)
+            save_model_info(run.info.run_id, f"runs:/{run.info.run_id}/model", './reports/experiment_info.json')
 
-            # Log metrics file as artifact
+            # Log metrics JSON as artifact
             mlflow.log_artifact('./reports/metrics.json')
 
+            logging.info('✅ Model evaluation and logging completed successfully!')
+
         except Exception as e:
-            logging.error('Failed to complete the model evaluation process: %s', e)
+            logging.error('❌ Failed to complete the model evaluation process: %s', e)
             raise
+
 
 if __name__ == '__main__':
     main()

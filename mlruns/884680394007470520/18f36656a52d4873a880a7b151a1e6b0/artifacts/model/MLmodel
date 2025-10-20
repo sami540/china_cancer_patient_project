@@ -1,0 +1,47 @@
+artifact_path: model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.11.9
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+mlflow_version: 2.19.0
+model_size_bytes: 9224455
+model_uuid: 65e7b78d3fe74ae5a44317c9d0e4b5ab
+run_id: 18f36656a52d4873a880a7b151a1e6b0
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "long", "name": "Age", "required": true}, {"type": "double",
+    "name": "BMI", "required": true}, {"type": "long", "name": "Family_History", "required":
+    true}, {"type": "long", "name": "Air_Pollution_Level", "required": true}, {"type":
+    "long", "name": "Physical_Activity_Level", "required": true}, {"type": "long",
+    "name": "Occupation_Type", "required": true}, {"type": "double", "name": "Medication_Adherence",
+    "required": true}, {"type": "long", "name": "Number_of_ER_Visits", "required":
+    true}, {"type": "double", "name": "Peak_Expiratory_Flow", "required": true}, {"type":
+    "double", "name": "FeNO_Level", "required": true}, {"type": "double", "name":
+    "Gender_Female", "required": true}, {"type": "double", "name": "Gender_Male",
+    "required": true}, {"type": "double", "name": "Gender_Other", "required": true},
+    {"type": "double", "name": "Smoking_Status_Current", "required": true}, {"type":
+    "double", "name": "Smoking_Status_Former", "required": true}, {"type": "double",
+    "name": "Smoking_Status_Never", "required": true}, {"type": "double", "name":
+    "Allergies_Dust", "required": true}, {"type": "double", "name": "Allergies_Multiple",
+    "required": true}, {"type": "double", "name": "Allergies_Pets", "required": true},
+    {"type": "double", "name": "Allergies_Pollen", "required": true}, {"type": "double",
+    "name": "Comorbidities_Both", "required": true}, {"type": "double", "name": "Comorbidities_Diabetes",
+    "required": true}, {"type": "double", "name": "Comorbidities_Hypertension", "required":
+    true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+utc_time_created: '2025-10-20 15:20:31.063819'

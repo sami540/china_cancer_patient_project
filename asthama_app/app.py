@@ -13,9 +13,27 @@ warnings.filterwarnings("ignore")
 # ======================================================
 # MLflow Setup
 # ======================================================
-mlflow.set_tracking_uri(os.getenv("DAGSHUB_TRACKING_URI"))
-# mlflow.set_tracking_uri("https://dagshub.com/samiabdulsami122010/china_cancer_patient_project.mlflow")
-MODEL_NAME = "my_model_v2"
+dagshub_token = os.getenv("DAGSHUB_TOKEN")  # you can rename CAPSTONE_TEST → DAGSHUB_TOKEN for clarity
+
+if not dagshub_token:
+    raise EnvironmentError("❌ DAGSHUB_TOKEN environment variable is not set")
+
+# Set DagsHub authentication for MLflow
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token  # e.g., "wadood123"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+# Define your DagsHub repo info
+dagshub_url = "https://dagshub.com"
+repo_owner = "samiabdulsami122010"          # e.g., "wadood123"
+repo_name = "china_cancer_patient_project"      # your project repo name
+
+# Set the MLflow tracking URI for DagsHub
+mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
+
+# Optional: print to verify
+print("✅ MLflow Tracking URI set to:", mlflow.get_tracking_uri())
+
+MODEL_NAME = "my_model"
 
 def get_latest_model_version(model_name):
     client = mlflow.MlflowClient()
