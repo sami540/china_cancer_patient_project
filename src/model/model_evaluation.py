@@ -84,7 +84,7 @@ def save_model_info(run_id: str, model_path: str, file_path: str):
         raise
 
 def main():
-    mlflow.set_experiment("dvc-pipeline")
+    mlflow.set_experiment("protfolio-pipeline")
     with mlflow.start_run() as run:
         try:
             logging.info('Start evaluation')
