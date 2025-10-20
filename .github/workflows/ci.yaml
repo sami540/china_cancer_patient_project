@@ -66,7 +66,7 @@ jobs:
           USERNAME=wadood229955
           SPACE_NAME=Asthma_detection_app
 
-          git clone https://huggingface.co/spaces/$USERNAME/$SPACE_NAME space_repo
+          git clone https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME space_repo
           rsync -av --exclude '.git' asthama_app/ space_repo/
           cd space_repo
           git config user.email "upwork229955@gmail.com"
