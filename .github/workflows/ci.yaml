@@ -1,26 +1,114 @@
+# name: CI Pipeline
+
+# on: push
+
+# jobs:
+#   project-testing:
+#     runs-on: ubuntu-latest
+
+#     env:
+#       # MLflow / DagsHub setup (available to all steps)
+#       DAGSHUB_TRACKING_URI: ${{ secrets.DAGSHUB_TRACKING_URI }}
+#       MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+#       MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_API_TOKEN }}
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Setup Python
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: '3.10'
+
+#       - name: Cache pip dependencies
+#         uses: actions/cache@v3
+#         with:
+#           path: ~/.cache/pip
+#           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+#           restore-keys: |
+#             ${{ runner.os }}-pip-
+
+#       - name: Install dependencies
+#         run: |
+#           pip install -r requirements.txt
+
+#       - name: Set DagsHub token
+#         run: echo "DAGSHUB_TOKEN=${{ secrets.DAGSHUB_TOKEN }}" >> $GITHUB_ENV    
+
+#       - name: Run DVC pipeline
+#         run: |
+#           dvc repro
+
+#       - name: Run model tests
+#         run: |
+#           python -m unittest tests/test_model.py
+
+
+#       - name: Register Model
+#         run: |
+#           python src/model/register_model.py
+    
+#       - name: Evaluate and promote model
+#         if: success()
+#         run: |
+#           python src/model/model_evaluation.py
+#           python scripts/promote_model.py
+
+#       - name: Set HF_TOKEN
+#         run: echo "HF_TOKEN=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV     
+
+#       - name: Deploy to Hugging Face Space
+#         if: success()
+#         env:
+#           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+#         run: |
+#           USERNAME=wadood229955
+#           SPACE_NAME=Asthma_detection_app
+
+#           git clone https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME space_repo
+#           rsync -av --exclude '.git' asthama_app/ space_repo/
+#           cd space_repo
+#           git config user.email "upwork229955@gmail.com"
+#           git config user.name "GitHub Actions Bot"
+#           if git remote | grep origin; then
+#              git remote set-url origin https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME
+#           else
+#              git remote add origin https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME
+#           fi
+
+#           git add .
+#           git commit -m "Deploy app via CI/CD" || echo "No changes to commit"
+#           git push origin main --force 
+    
+
 name: CI Pipeline
 
-on: push
+on:
+  push:
 
 jobs:
   project-testing:
     runs-on: ubuntu-latest
 
     env:
-      # MLflow / DagsHub setup (available to all steps)
+      # DagsHub / MLflow credentials
       DAGSHUB_TRACKING_URI: ${{ secrets.DAGSHUB_TRACKING_URI }}
       MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
       MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_API_TOKEN }}
 
     steps:
+      # 1️⃣ Checkout repo
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
 
+      # 3️⃣ Cache pip dependencies
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -29,52 +117,60 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      # 4️⃣ Install dependencies
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Set DagsHub token
-        run: echo "DAGSHUB_TOKEN=${{ secrets.DAGSHUB_TOKEN }}" >> $GITHUB_ENV    
+      # 5️⃣ Set DagsHub token for scripts
+      - name: Set DAGSHUB_TOKEN
+        run: echo "DAGSHUB_TOKEN=${{ secrets.DAGSHUB_TOKEN }}" >> $GITHUB_ENV
 
+      # 6️⃣ Run DVC pipeline
       - name: Run DVC pipeline
-        run: |
-          dvc repro
+        run: dvc repro
 
+      # 7️⃣ Run model tests
       - name: Run model tests
-        run: |
-          python -m unittest tests/test_model.py
+        run: python -m unittest tests/test_model.py
 
-
+      # 8️⃣ Register model in MLflow/DagsHub
       - name: Register Model
-        run: |
-          python src/model/register_model.py
-    
+        run: python src/model/register_model.py
+
+      # 9️⃣ Evaluate and promote model
       - name: Evaluate and promote model
         if: success()
         run: |
           python src/model/model_evaluation.py
-          python scripts/promote_model.py
+          python src/model/promote_model.py
 
+      # 🔟 Set Hugging Face token
       - name: Set HF_TOKEN
-        run: echo "HF_TOKEN=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV     
+        run: echo "HF_TOKEN=${{ secrets.HF_TOKEN }}" >> $GITHUB_ENV
 
+      # 1️⃣1️⃣ Deploy app to Hugging Face Space
       - name: Deploy to Hugging Face Space
         if: success()
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-         USERNAME=wadood229955
-         SPACE_NAME=Asthma_detection_app
+          USERNAME=wadood229955
+          SPACE_NAME=Asthma_detection_app
 
-         git clone https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME space_repo
-         rsync -av --exclude '.git' asthama_app/ space_repo/
-         cd space_repo
-         git config user.email "upwork229955@gmail.com"
-         git config user.name "GitHub Actions Bot"
-         git remote remove origin
-         git remote set-url origin https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME
+          git clone https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME space_repo
+          rsync -av --exclude '.git' asthama_app/ space_repo/
+          cd space_repo
 
-         git add .
-         git commit -m "Deploy app via CI/CD" || echo "No changes to commit"
-         git push origin main --force 
-    
+          git config user.email "upwork229955@gmail.com"
+          git config user.name "GitHub Actions Bot"
+
+          # Safely set remote URL
+          if git remote | grep origin; then
+            git remote set-url origin https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME
+          else
+            git remote add origin https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME
+          fi
+
+          git add .
+          git commit -m "Deploy app via CI/CD" || echo "No changes to commit"
+          git push origin main --force
