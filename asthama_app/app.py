@@ -11,54 +11,63 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # ======================================================
-# MLflow Setup
+# Streamlit UI Initialization (important for Hugging Face)
+# ======================================================
+st.set_page_config(page_title="Asthma Risk Prediction", layout="wide")
+st.title("🌿 Asthma Risk Prediction App")
+
+st.write("Initializing model... please wait ⏳")
+
+# ======================================================
+# MLflow + DagsHub Setup
 # ======================================================
 dagshub_token = os.getenv("DAGSHUB_TOKEN")
-
 dagshub_url = "https://dagshub.com"
 repo_owner = "samiabdulsami122010"
 repo_name = "china_cancer_patient_project"
 MODEL_NAME = "my_model"
 
-model = None  # Will hold the final model
+model = None
 
 try:
     if not dagshub_token:
-        raise EnvironmentError("❌ DAGSHUB_TOKEN not found — trying local model fallback.")
+        st.warning("⚠️ `DAGSHUB_TOKEN` not found — falling back to local model.")
+        raise EnvironmentError("DAGSHUB_TOKEN missing")
 
-    # Set up MLflow credentials
+    # Set credentials for MLflow (DagsHub)
     os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
     os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 
-    # Set the MLflow tracking URI
+    # Set MLflow tracking URI
     mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
-    print("✅ MLflow Tracking URI set to:", mlflow.get_tracking_uri())
+    st.info(f"✅ MLflow Tracking URI set to: {mlflow.get_tracking_uri()}")
 
-    # Try to get the latest model version from DagsHub
+    # Load latest model version from MLflow registry
     client = mlflow.MlflowClient()
     latest = client.get_latest_versions(MODEL_NAME, stages=["Staging"]) or client.get_latest_versions(MODEL_NAME, stages=["None"])
 
     if latest:
         model_version = latest[0].version
         model_uri = f"models:/{MODEL_NAME}/{model_version}"
-        print(f"📦 Loading model from MLflow registry: {model_uri}")
+        st.write(f"📦 Loading model from MLflow registry: `{model_uri}` ...")
         model = mlflow.pyfunc.load_model(model_uri)
+        st.success("✅ Model loaded successfully from MLflow!")
     else:
-        raise ValueError("No version found in MLflow registry")
+        raise ValueError("No model version found in MLflow registry.")
 
 except Exception as e:
     st.warning(f"⚠️ Could not load model from DagsHub MLflow.\nReason: {e}\n➡️ Loading local fallback model...")
 
-    # Local model fallback
+    # Try loading local model
     if os.path.exists("model"):
         model = mlflow.pyfunc.load_model("model")
-        print("✅ Loaded local model successfully")
+        st.success("✅ Loaded local model successfully.")
     else:
         st.error("❌ No local model found! Please include a `model/` folder in your repo.")
         st.stop()
 
 # ======================================================
-# Metrics (simple in-memory counters)
+# Metrics (simple counters)
 # ======================================================
 REQUEST_COUNT = 0
 PREDICTION_COUNT = Counter()
@@ -77,9 +86,9 @@ EXPECTED_COLUMNS = [
 ]
 
 # ======================================================
-# Streamlit UI
+# Prediction Form
 # ======================================================
-st.title("Asthma Risk Prediction")
+st.subheader("🩺 Enter Patient Details")
 
 with st.form("prediction_form"):
     age = st.number_input("Age", min_value=0)
@@ -96,8 +105,11 @@ with st.form("prediction_form"):
     smoking = st.selectbox("Smoking Status", ["Current", "Former", "Never"])
     allergies = st.selectbox("Allergies", ["Dust", "Multiple", "Pets", "Pollen"])
     comorbidities = st.selectbox("Comorbidities", ["Both", "Diabetes", "Hypertension"])
-    submitted = st.form_submit_button("Predict")
+    submitted = st.form_submit_button("🔍 Predict")
 
+# ======================================================
+# Prediction Logic
+# ======================================================
 if submitted:
     REQUEST_COUNT += 1
     start_time = time.time()
@@ -107,7 +119,7 @@ if submitted:
     physical_activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2}
     occupation_map = {"Indoor": 0, "Outdoor": 1}
 
-    # Prepare input
+    # Prepare input data
     data = pd.DataFrame([{
         "Age": age,
         "BMI": bmi,
@@ -136,13 +148,16 @@ if submitted:
 
     data = data.reindex(columns=EXPECTED_COLUMNS, fill_value=0)
 
-    prediction = model.predict(data)[0]
-    result_text = "✅ No Asthma" if prediction == 0 else "😷 Has Asthma"
+    try:
+        prediction = model.predict(data)[0]
+        result_text = "✅ No Asthma" if prediction == 0 else "😷 Has Asthma"
+        PREDICTION_COUNT[str(prediction)] += 1
+        latency = time.time() - start_time
 
-    PREDICTION_COUNT[str(prediction)] += 1
-    latency = time.time() - start_time
+        st.success(f"Prediction: **{result_text}**")
+        st.write(f"⏱️ Processed in {latency:.2f} seconds")
+        st.write(f"📊 Total Requests: {REQUEST_COUNT}")
+        st.write(f"🧩 Prediction counts: {dict(PREDICTION_COUNT)}")
 
-    st.write(f"Prediction: {result_text}")
-    st.write(f"Request processed in {latency:.2f} seconds")
-    st.write(f"Total Requests: {REQUEST_COUNT}")
-    st.write(f"Prediction counts: {dict(PREDICTION_COUNT)}")
+    except Exception as e:
+        st.error(f"🚨 Error during prediction: {e}")
