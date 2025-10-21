@@ -14,33 +14,25 @@ stages:
       size: 887817
       nfiles: 1
   data_preprocessing:
-    cmd: python src/data/data_preprocessing.py
+    cmd: python -m src.data.data_preprocessing
     deps:
     - path: data/raw
       hash: md5
       md5: be2f159e8d5c3520c4ac83f42d159c33.dir
       size: 887817
       nfiles: 1
-    - path: src/data/data_preprocessing.py
-      hash: md5
-      md5: 28f508c2eb6aee21aee5c0b4ff5452c9
-      size: 1920
     outs:
     - path: data/interim/preprocessed_data_2.csv
       hash: md5
       md5: c0a3301462ababc88b8e87e82146d5ec
       size: 744912
   model_building:
-    cmd: python src/model/model_building.py
+    cmd: python -m src.model.model_building
     deps:
     - path: data/interim/preprocessed_data_2.csv
       hash: md5
       md5: c0a3301462ababc88b8e87e82146d5ec
       size: 744912
-    - path: src/model/model_building.py
-      hash: md5
-      md5: e01f35384cab64af314e18959dd60de6
-      size: 3127
     outs:
     - path: models/model.pkl
       hash: md5

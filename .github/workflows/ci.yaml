@@ -51,7 +51,7 @@ jobs:
 
       # 8. Register model in MLflow/DagsHub
       - name: Register Model
-        run: python src/model/register_model.py
+        run: python -m src.model.register_model
 
       # 9. Evaluate and promote model
       - name: Evaluate and promote model
