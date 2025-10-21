@@ -62,7 +62,6 @@ jobs:
 
       # 10. Deploy app to Hugging Face Space
       - name: Deploy to Hugging Face Space 🚀
-        # Only run if all previous steps succeeded
         if: success()
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -71,30 +70,12 @@ jobs:
           USERNAME=wadood229955
           SPACE_NAME=Asthma_detection_app
           APP_FOLDER=asthama_app
-          
-          # Clone the Hugging Face Space repository using the token for authentication
-          git clone https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME space_repo
-          
-          # Copy the application files into the cloned repository, excluding the .git folder
+          git clone https://USER:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${USERNAME}/${SPACE_NAME} space_repo
           rsync -av --exclude '.git' $APP_FOLDER/ space_repo/
-          
-          # Change directory to the cloned repo
           cd space_repo
-          
-          # Configure Git user for the commit
           git config user.email "upwork229955@gmail.com"
           git config user.name "GitHub Actions Bot"
-
-          # Re-configure the origin remote to use the token for the push
-          if git remote | grep origin; then
-            git remote set-url origin https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME
-          else
-            git remote add origin https://$HF_TOKEN@huggingface.co/spaces/$USERNAME/$SPACE_NAME
-          fi
-          
-          # Commit changes (use '|| echo' to prevent failure if there are no changes)
           git add .
           git commit -m "Deploy app via CI/CD" || echo "No changes to commit"
-          
-          # Force push to update the Space
-          git push origin main --force
+          git push origin main
+    
