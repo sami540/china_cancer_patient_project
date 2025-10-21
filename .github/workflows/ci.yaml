@@ -41,6 +41,9 @@ jobs:
       - name: Set DAGSHUB_TOKEN
         run: echo "DAGSHUB_TOKEN=${{ secrets.DAGSHUB_TOKEN }}" >> $GITHUB_ENV
 
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD" >> $GITHUB_ENV  
+        
       # 6. Run DVC pipeline
       - name: Run DVC pipeline
         run: dvc repro
