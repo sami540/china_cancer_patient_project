@@ -93,7 +93,7 @@ def get_model(model_name: str):
         return model
     except Exception as e:
         logger.error(f"⚠️ Failed to load model from DagsHub: {e}")
-        emergency_path = './asthama_app/emergency_model/model.pkl'
+        emergency_path = 'emergency_model/model.pkl'
         logger.info(f"🔁 Loading emergency backup model from {emergency_path}")
         return load_model(emergency_path)
 
