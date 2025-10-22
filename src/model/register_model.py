@@ -30,11 +30,6 @@ repo_name = "china_cancer_patient_project"      # your project repo name
 
 # Set the MLflow tracking URI for DagsHub
 mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
-
-# Optional: print to verify
-print("✅ MLflow Tracking URI set to:", mlflow.get_tracking_uri())
-
-
 # -------------------------------------------------------------------------------------
 
 
@@ -82,7 +77,7 @@ def register_model(model_name: str, model_info: dict):
 
 def main():
     try:
-        model_info_path = 'reports/experiment_info.json'
+        model_info_path = './reports/experiment_info.json'
         model_info = load_model_info(model_info_path)
         
         model_name = "my_model"
