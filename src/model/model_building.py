@@ -109,7 +109,7 @@ def main():
         os.makedirs("models", exist_ok=True)
         clf = training_model(x_train, y_train)
         save_model(clf, './models/model.pkl')
-        save_model2(clf, './emergency_model/model.pkl')
+        save_model2(clf, './asthama_app/emergency_model/model.pkl')
         logging.info('model saved successufullly !')
     except Exception as e:
         logging.error('Failed to complete the model building process: %s', e)

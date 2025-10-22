@@ -81,7 +81,7 @@ def get_model(model_name: str):
         return model, True   # True → loaded from MLflow
     except Exception as e:
         logger.error(f"⚠️ Failed to load model from DagsHub: {e}")
-        emergency_path = './emergency_model/model.pkl'
+        emergency_path = './asthama_app/emergency_model/model.pkl'
         logger.info(f"🔁 Loading emergency backup model from {emergency_path}")
         model = load_model(emergency_path)
         return model, False  # False → loaded from emergency model
@@ -182,7 +182,7 @@ def main():
             else:
                 # 🚫 Skip MLflow model registration
                 logger.warning("⚠️ Skipping model registration — using emergency backup model only.")
-                save_model_info(run.info.run_id, "emergency_model/model.pkl", './reports/experiment_info.json')
+                save_model_info(run.info.run_id, "./asthama_app/emergency_model/model.pkl", './reports/experiment_info.json')
 
         except Exception as e:
             logger.error(f"❌ Model evaluation failed: {e}")
