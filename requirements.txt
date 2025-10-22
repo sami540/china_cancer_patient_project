@@ -20,4 +20,3 @@ gradio
 dagshub
 streamlit
 gradio
-threading
