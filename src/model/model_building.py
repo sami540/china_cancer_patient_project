@@ -6,6 +6,10 @@ from sklearn.ensemble import RandomForestClassifier
 import yaml
 from src.logger import logging
 import os
+import pickle
+import logging
+import shutil
+
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -69,6 +73,32 @@ def save_model(model, file_path: str) -> None:
         logging.error('Error occurred while saving the model: %s', e)
         raise
 
+def save_model2(model, file_path: str) -> None:
+    """Delete all files in the target folder and save the trained model to a file."""
+    try:
+        # Get the folder path from the file path
+        folder = os.path.dirname(file_path)
+        # If folder exists, clear it
+        if os.path.exists(folder):
+            for filename in os.listdir(folder):
+                file_to_delete = os.path.join(folder, filename)
+                try:
+                    if os.path.isfile(file_to_delete) or os.path.islink(file_to_delete):
+                        os.unlink(file_to_delete)  # delete file
+                    elif os.path.isdir(file_to_delete):
+                        shutil.rmtree(file_to_delete)  # delete folder
+                except Exception as e:
+                    logging.warning("Failed to delete %s: %s", file_to_delete, e)
+        else:
+            os.makedirs(folder, exist_ok=True)
+        # Save the new model
+        with open(file_path, 'wb') as file:
+            pickle.dump(model, file)
+        logging.info('Model saved to %s', file_path)
+    except Exception as e:
+        logging.error('Error occurred while saving the model: %s', e)
+        raise
+
 def main():
     try:
 
@@ -78,7 +108,8 @@ def main():
         x_train, x_test, y_train, y_test = split_data(df, 0.2, 42)
         os.makedirs("models", exist_ok=True)
         clf = training_model(x_train, y_train)
-        save_model(clf, 'models/model.pkl')
+        save_model(clf, './models/model.pkl')
+        save_model2(clf, './emergency_model/model.pkl')
         logging.info('model saved successufullly !')
     except Exception as e:
         logging.error('Failed to complete the model building process: %s', e)

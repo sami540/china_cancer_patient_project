@@ -1,60 +1,81 @@
 import os
 import mlflow
 from mlflow.tracking import MlflowClient
+import logging
 
+# ======================================================
+# Configuration
+# ======================================================
 MODEL_NAME = "my_model"
+DAGSHUB_URL = "https://dagshub.com"
+REPO_OWNER = "samiabdulsami122010"
+REPO_NAME = "china_cancer_patient_project"
 
+# ======================================================
+# Logging Setup
+# ======================================================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# ======================================================
+# Promote Model Function
+# ======================================================
 def promote_model():
-    # Load DagsHub token
-    dagshub_token = os.getenv("DAGSHUB_TOKEN")  # You can rename CAPSTONE_TEST → DAGSHUB_TOKEN for clarity
-    if not dagshub_token:
-        raise EnvironmentError("❌ DAGSHUB_TOKEN environment variable is not set")
+    """Promote model from Staging → Production if loaded from MLflow; skip otherwise."""
+    try:
+        # Load DagsHub token
+        dagshub_token = os.getenv("DAGSHUB_TOKEN")
+        if not dagshub_token:
+            raise EnvironmentError("❌ DAGSHUB_TOKEN environment variable is not set")
 
-    # Set DagsHub authentication for MLflow
-    os.environ["MLFLOW_TRACKING_USERNAME"] = "samiabdulsami122010"  # your DagsHub username
-    os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+        # MLflow Authentication for DagsHub
+        os.environ["MLFLOW_TRACKING_USERNAME"] = REPO_OWNER
+        os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 
-    # Define your DagsHub repo info
-    dagshub_url = "https://dagshub.com"
-    repo_owner = "samiabdulsami122010"
-    repo_name = "china_cancer_patient_project"
+        # Set Tracking URI
+        mlflow.set_tracking_uri(f"{DAGSHUB_URL}/{REPO_OWNER}/{REPO_NAME}.mlflow")
+        logger.info("✅ MLflow Tracking URI set to: %s", mlflow.get_tracking_uri())
 
-    # Set the MLflow tracking URI for DagsHub
-    mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
+        # Initialize MLflow Client
+        client = MlflowClient()
 
-    # Optional: print to verify connection
-    print("✅ MLflow Tracking URI set to:", mlflow.get_tracking_uri())
+        # Check if model exists in Staging
+        versions_staging = client.get_latest_versions(MODEL_NAME, stages=["Staging"])
+        if not versions_staging:
+            logger.warning(f"⚠️ No versions of '{MODEL_NAME}' found in 'Staging' stage — skipping promotion.")
+            return
 
-    # Initialize MLflow client
-    client = MlflowClient()
+        latest_version_staging = versions_staging[0].version
 
-    model_name = MODEL_NAME
+        # Archive current Production versions
+        prod_versions = client.get_latest_versions(MODEL_NAME, stages=["Production"])
+        for version in prod_versions:
+            client.transition_model_version_stage(
+                name=MODEL_NAME,
+                version=version.version,
+                stage="Archived"
+            )
+            logger.info(f"📦 Archived previous Production version: {version.version}")
 
-    # ✅ Check if a Staging model exists
-    versions_staging = client.get_latest_versions(model_name, stages=["Staging"])
-
-    if not versions_staging:
-        raise ValueError(f"No versions of '{model_name}' found in 'Staging' stage. Register step may not have transitioned it.")
-
-    latest_version_staging = versions_staging[0].version
-
-    # Archive current Production model(s)
-    prod_versions = client.get_latest_versions(model_name, stages=["Production"])
-    for version in prod_versions:
+        # Promote the new Staging model to Production
         client.transition_model_version_stage(
-            name=model_name,
-            version=version.version,
-            stage="Archived"
+            name=MODEL_NAME,
+            version=latest_version_staging,
+            stage="Production"
         )
+        logger.info(f"✅ Model version {latest_version_staging} promoted to Production successfully!")
 
-    # Promote new one
-    client.transition_model_version_stage(
-        name=model_name,
-        version=latest_version_staging,
-        stage="Production"
-    )
-    print(f"✅ Model version {latest_version_staging} promoted to Production!")
+    except Exception as e:
+        # Skip gracefully if MLflow unreachable or any error occurs
+        logger.error(f"⚠️ Could not promote model from MLflow: {e}")
+        logger.warning("⏩ Skipping model promotion step (likely using emergency model).")
 
 
+# ======================================================
+# Entry Point
+# ======================================================
 if __name__ == "__main__":
     promote_model()

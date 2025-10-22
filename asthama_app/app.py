@@ -20,27 +20,23 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ======================================================
-# MLflow Setup
+# MLflow + DagsHub Setup
 # ======================================================
-dagshub_token = os.getenv("DAGSHUB_TOKEN")  # you can rename CAPSTONE_TEST → DAGSHUB_TOKEN for clarity
-
+dagshub_token = os.getenv("DAGSHUB_TOKEN")
 if not dagshub_token:
     raise EnvironmentError("❌ DAGSHUB_TOKEN environment variable is not set")
 
-# Set DagsHub authentication for MLflow
-os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token  # e.g., "wadood123"
-os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
-
-# Define your DagsHub repo info
 dagshub_url = "https://dagshub.com"
-repo_owner = "samiabdulsami122010"          # e.g., "wadood123"
-repo_name = "china_cancer_patient_project"      # your project repo name
+repo_owner = "samiabdulsami122010"
+repo_name = "china_cancer_patient_project"
 
-# Set the MLflow tracking URI for DagsHub
+# Set MLflow tracking URI
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
 
 MODEL_NAME = "my_model"
-
+emergency_path = './emergency_model/model.pkl'
 # ======================================================
 # Flask App Initialization
 # ======================================================
@@ -50,61 +46,64 @@ app = Flask(__name__)
 # Prometheus Metrics
 # ======================================================
 registry = CollectorRegistry()
-REQUEST_COUNT = Counter(
-    "app_request_count", "Total number of requests", ["method", "endpoint"], registry=registry
-)
-REQUEST_LATENCY = Histogram(
-    "app_request_latency_seconds", "Request latency (seconds)", ["endpoint"], registry=registry
-)
-PREDICTION_COUNT = Counter(
-    "model_prediction_count", "Number of predictions per class", ["prediction"], registry=registry
-)
+REQUEST_COUNT = Counter("app_request_count", "Total number of requests", ["method", "endpoint"], registry=registry)
+REQUEST_LATENCY = Histogram("app_request_latency_seconds", "Request latency (seconds)", ["endpoint"], registry=registry)
+PREDICTION_COUNT = Counter("model_prediction_count", "Number of predictions per class", ["prediction"], registry=registry)
 
 # ======================================================
-# Load Model from MLflow Registry
+# Model Loading Functions
 # ======================================================
-def get_latest_model_version(model_name):
-    client = mlflow.MlflowClient()
-    latest_version = client.get_latest_versions(model_name, stages=["Production"])
-    if not latest_version:
-        latest_version = client.get_latest_versions(model_name, stages=["None"])
-    return latest_version[0].version if latest_version else None
+def get_latest_model_version(model_name: str):
+    """Fetch the latest model version in Production stage; fallback to None stage."""
+    try:
+        client = mlflow.MlflowClient()
+        latest_version = client.get_latest_versions(model_name, stages=["Production"])
+        if not latest_version:
+            latest_version = client.get_latest_versions(model_name, stages=["None"])
+        return latest_version[0].version if latest_version else None
+    except Exception as e:
+        logger.error(f"Failed to fetch model version from MLflow: {e}")
+        return None
 
 def load_model(file_path: str):
-    """Load the trained model from a file."""
+    """Load a model from a local file."""
     try:
         with open(file_path, 'rb') as file:
             model = pickle.load(file)
-        logging.info('Model loaded from %s', file_path)
+        logger.info(f"✅ Model loaded from {file_path}")
         return model
     except FileNotFoundError:
-        logging.error('File not found: %s', file_path)
+        logger.error(f"File not found: {file_path}")
         raise
     except Exception as e:
-        logging.error('Unexpected error occurred while loading the model: %s', e)
+        logger.error(f"Unexpected error occurred while loading the model: {e}")
         raise
 
-try:
-    model_version = get_latest_model_version(MODEL_NAME)
-    model_uri = f"models:/{MODEL_NAME}/{model_version}"
-    logger.info(f"🔄 Loading model from: {model_uri}")
-    model = mlflow.pyfunc.load_model(model_uri)
-    logger.info("✅ Model loaded successfully.")
-except:
-    model = load_model('./emergency_model/model.pkl')
+def get_model(model_name: str):
+    """Try loading the model from DagsHub; fallback to emergency model."""
+    try:
+        model_version = get_latest_model_version(model_name)
+        if not model_version:
+            raise ValueError("No model version found in MLflow registry.")
 
-
-
-# Try to get input schema (optional)
-try:
-    input_schema = model.metadata.get_input_schema()
-    logger.info(f"📊 Model input schema: {[f.name for f in input_schema]}")
-except Exception as e:
-    logger.warning("⚠️ Could not load model input schema from MLflow.")
-    input_schema = None
+        model_uri = f"models:/{model_name}/{model_version}"
+        logger.info(f"🔄 Loading model from DagsHub: {model_uri}")
+        model = mlflow.pyfunc.load_model(model_uri)
+        logger.info("✅ Model loaded successfully from DagsHub.")
+        return model
+    except Exception as e:
+        logger.error(f"⚠️ Failed to load model from DagsHub: {e}")
+        emergency_path = './emergency_model/model.pkl'
+        logger.info(f"🔁 Loading emergency backup model from {emergency_path}")
+        return load_model(emergency_path)
 
 # ======================================================
-# Expected Columns (match training time)
+# Load Model at Startup
+# ======================================================
+model = get_model(MODEL_NAME)
+
+# ======================================================
+# Expected Columns
 # ======================================================
 EXPECTED_COLUMNS = [
     "Age","BMI","Family_History","Air_Pollution_Level","Physical_Activity_Level",
@@ -135,31 +134,31 @@ def predict():
     try:
         air_pollution_map = {"Low": 0, "Moderate": 1, "High": 2}
         physical_activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2}
-        occupation_type_map = {'Indoor': 0, 'Outdoor': 1}
-        
+        occupation_type_map = {"Indoor": 0, "Outdoor": 1}
+
         # Collect form data
         data = pd.DataFrame([{
-    "Age": float(request.form["Age"]),
-    "BMI": float(request.form["BMI"]),
-    "Family_History": int(request.form["Family_History"]),
-    "Air_Pollution_Level": air_pollution_map[request.form["Air_Pollution_Level"]],
-    "Physical_Activity_Level": physical_activity_map[request.form["Physical_Activity_Level"]],
-    "Occupation_Type": occupation_type_map[request.form["Occupation_Type"]],
-    "Medication_Adherence": int(request.form["Medication_Adherence"]),
-    "Number_of_ER_Visits": int(request.form["Number_of_ER_Visits"]),
-    "Peak_Expiratory_Flow": float(request.form["Peak_Expiratory_Flow"]),
-    "FeNO_Level": float(request.form["FeNO_Level"]),
-    "Gender": request.form["Gender"],
-    "Smoking_Status": request.form["Smoking_Status"],
-    "Allergies": request.form["Allergies"],
-    "Comorbidities": request.form["Comorbidities"]
-}])
+            "Age": float(request.form["Age"]),
+            "BMI": float(request.form["BMI"]),
+            "Family_History": int(request.form["Family_History"]),
+            "Air_Pollution_Level": air_pollution_map[request.form["Air_Pollution_Level"]],
+            "Physical_Activity_Level": physical_activity_map[request.form["Physical_Activity_Level"]],
+            "Occupation_Type": occupation_type_map[request.form["Occupation_Type"]],
+            "Medication_Adherence": int(request.form["Medication_Adherence"]),
+            "Number_of_ER_Visits": int(request.form["Number_of_ER_Visits"]),
+            "Peak_Expiratory_Flow": float(request.form["Peak_Expiratory_Flow"]),
+            "FeNO_Level": float(request.form["FeNO_Level"]),
+            "Gender": request.form["Gender"],
+            "Smoking_Status": request.form["Smoking_Status"],
+            "Allergies": request.form["Allergies"],
+            "Comorbidities": request.form["Comorbidities"]
+        }])
 
         data = pd.get_dummies(data)
 
-# Drop any accidental columns named like the target
-        if 'Has_Asthma' in data.columns:
-          data = data.drop(columns=['Has_Asthma'])
+        # Drop accidental target column if exists
+        if "Has_Asthma" in data.columns:
+            data = data.drop(columns=["Has_Asthma"])
 
         data = data.reindex(columns=EXPECTED_COLUMNS, fill_value=0)
 
@@ -169,7 +168,6 @@ def predict():
 
         PREDICTION_COUNT.labels(prediction=str(prediction)).inc()
         REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start_time)
-
         return render_template("index.html", result=result)
 
     except Exception as e:
