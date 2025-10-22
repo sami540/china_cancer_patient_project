@@ -8,3 +8,16 @@ pandas==2.2.3
 dvc
 dagshub
 streamlit
+Flask==3.1.0
+mlflow==2.19.0
+mlflow_skinny==2.19.0
+prometheus_client
+numpy==2.2.1
+pandas==2.2.3
+dvc
+streamlit
+gradio
+dagshub
+streamlit
+gradio
+threading
