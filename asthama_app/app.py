@@ -21,20 +21,18 @@ logger = logging.getLogger(__name__)
 # MLflow + DagsHub Setup
 # ======================================================
 dagshub_token = os.getenv("DAGSHUB_TOKEN")
-if not dagshub_token:
-    logger.warning("⚠️ DAGSHUB_TOKEN not found. Using local emergency model.")
-
 dagshub_url = "https://dagshub.com"
 repo_owner = "samiabdulsami122010"
 repo_name = "china_cancer_patient_project"
+MODEL_NAME = "my_model"
+emergency_path = "./emergency_model/model.pkl"
 
 if dagshub_token:
     os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
     os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
     mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
-
-MODEL_NAME = "my_model"
-emergency_path = "./emergency_model/model.pkl"
+else:
+    logger.warning("⚠️ DAGSHUB_TOKEN not found. Using local emergency model.")
 
 # ======================================================
 # Model Loading
@@ -53,30 +51,33 @@ def get_latest_model_version(model_name: str):
 def load_local_model(path: str):
     try:
         with open(path, "rb") as f:
-            return pickle.load(f)
+            model = pickle.load(f)
+        logger.info("✅ Local model loaded successfully.")
+        return model
     except Exception as e:
         logger.error(f"Failed to load local model: {e}")
         raise
 
 def get_model(model_name: str):
     try:
-        model_version = get_latest_model_version(model_name)
-        if not model_version:
+        version = get_latest_model_version(model_name)
+        if not version:
             raise ValueError("No model version found in MLflow registry.")
-        model_uri = f"models:/{model_name}/{model_version}"
-        logger.info(f"🔄 Loading model from DagsHub: {model_uri}")
-        model = mlflow.pyfunc.load_model(model_uri)
+        uri = f"models:/{model_name}/{version}"
+        logger.info(f"🔄 Loading model from DagsHub: {uri}")
+        model = mlflow.pyfunc.load_model(uri)
         logger.info("✅ Model loaded from DagsHub.")
         return model
     except Exception as e:
         logger.error(f"⚠️ Failed to load model from DagsHub: {e}")
-        logger.info("🔁 Loading local emergency model...")
+        logger.info("🔁 Loading local fallback model...")
         return load_local_model(emergency_path)
 
+# Load model (try DagsHub → fallback)
 model = get_model(MODEL_NAME)
 
 # ======================================================
-# Input Columns and Mapping
+# Prediction Logic
 # ======================================================
 EXPECTED_COLUMNS = [
     "Age","BMI","Family_History","Air_Pollution_Level","Physical_Activity_Level",
@@ -116,20 +117,19 @@ def predict_asthma(Age, BMI, Family_History, Air_Pollution_Level,
         }])
 
         data = pd.get_dummies(data)
-        if "Has_Asthma" in data.columns:
-            data = data.drop(columns=["Has_Asthma"])
         data = data.reindex(columns=EXPECTED_COLUMNS, fill_value=0)
 
         pred = model.predict(data)[0]
         return "✅ No Asthma" if pred == 0 else "😷 Has Asthma"
     except Exception as e:
+        logger.error(f"Prediction error: {e}")
         return f"❌ Prediction failed: {e}"
 
 # ======================================================
 # Gradio UI
 # ======================================================
 with gr.Blocks(title="Asthma Detection App") as demo:
-    gr.Markdown("## 😷 Asthma Detection App\nEnter patient details below to predict asthma likelihood.")
+    gr.Markdown("## 🫁 Asthma Detection App\nEnter patient details below to predict asthma likelihood.")
 
     with gr.Row():
         Age = gr.Number(label="Age")
@@ -149,8 +149,8 @@ with gr.Blocks(title="Asthma Detection App") as demo:
         Allergies = gr.Dropdown(["Dust", "Multiple", "Pets", "Pollen"], label="Allergies")
         Comorbidities = gr.Dropdown(["Both", "Diabetes", "Hypertension"], label="Comorbidities")
 
+    result = gr.Textbox(label="Prediction Result", interactive=False)
     submit = gr.Button("🔍 Predict")
-    result = gr.Textbox(label="Prediction Result")
 
     submit.click(
         predict_asthma,
@@ -163,7 +163,7 @@ with gr.Blocks(title="Asthma Detection App") as demo:
     )
 
 # ======================================================
-# Run App
+# Launch for Hugging Face (No port binding)
 # ======================================================
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=8000)
+    demo.launch()
