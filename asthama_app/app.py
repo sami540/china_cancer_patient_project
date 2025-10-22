@@ -7,6 +7,9 @@ from prometheus_client import Counter, Histogram, generate_latest, CollectorRegi
 import warnings
 import os
 import pickle
+import threading
+import gradio as gr
+import requests
 
 warnings.filterwarnings("ignore")
 
@@ -24,19 +27,22 @@ logger = logging.getLogger(__name__)
 # ======================================================
 dagshub_token = os.getenv("DAGSHUB_TOKEN")
 if not dagshub_token:
-    raise EnvironmentError("❌ DAGSHUB_TOKEN environment variable is not set")
+    logger.warning("⚠️ DAGSHUB_TOKEN not found — running in fallback mode.")
 
 dagshub_url = "https://dagshub.com"
 repo_owner = "samiabdulsami122010"
 repo_name = "china_cancer_patient_project"
 
-# Set MLflow tracking URI
-os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
-os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
-mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
+if dagshub_token:
+    os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+    os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+    mlflow.set_tracking_uri(f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow")
+else:
+    mlflow.set_tracking_uri("file:///tmp/mlruns")
 
 MODEL_NAME = "my_model"
 emergency_path = './emergency_model/model.pkl'
+
 # ======================================================
 # Flask App Initialization
 # ======================================================
@@ -54,7 +60,6 @@ PREDICTION_COUNT = Counter("model_prediction_count", "Number of predictions per 
 # Model Loading Functions
 # ======================================================
 def get_latest_model_version(model_name: str):
-    """Fetch the latest model version in Production stage; fallback to None stage."""
     try:
         client = mlflow.MlflowClient()
         latest_version = client.get_latest_versions(model_name, stages=["Production"])
@@ -66,7 +71,6 @@ def get_latest_model_version(model_name: str):
         return None
 
 def load_model(file_path: str):
-    """Load a model from a local file."""
     try:
         with open(file_path, 'rb') as file:
             model = pickle.load(file)
@@ -74,18 +78,16 @@ def load_model(file_path: str):
         return model
     except FileNotFoundError:
         logger.error(f"File not found: {file_path}")
-        raise
+        return None
     except Exception as e:
         logger.error(f"Unexpected error occurred while loading the model: {e}")
-        raise
+        return None
 
 def get_model(model_name: str):
-    """Try loading the model from DagsHub; fallback to emergency model."""
     try:
         model_version = get_latest_model_version(model_name)
         if not model_version:
             raise ValueError("No model version found in MLflow registry.")
-
         model_uri = f"models:/{model_name}/{model_version}"
         logger.info(f"🔄 Loading model from DagsHub: {model_uri}")
         model = mlflow.pyfunc.load_model(model_uri)
@@ -93,7 +95,6 @@ def get_model(model_name: str):
         return model
     except Exception as e:
         logger.error(f"⚠️ Failed to load model from DagsHub: {e}")
-        emergency_path = 'emergency_model/model.pkl'
         logger.info(f"🔁 Loading emergency backup model from {emergency_path}")
         return load_model(emergency_path)
 
@@ -101,6 +102,8 @@ def get_model(model_name: str):
 # Load Model at Startup
 # ======================================================
 model = get_model(MODEL_NAME)
+if model is None:
+    logger.error("❌ No model available. Please check emergency_model/model.pkl or DagsHub connection.")
 
 # ======================================================
 # Expected Columns
@@ -116,7 +119,7 @@ EXPECTED_COLUMNS = [
 ]
 
 # ======================================================
-# Routes
+# Flask Routes
 # ======================================================
 @app.route("/")
 def home():
@@ -136,7 +139,6 @@ def predict():
         physical_activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2}
         occupation_type_map = {"Indoor": 0, "Outdoor": 1}
 
-        # Collect form data
         data = pd.DataFrame([{
             "Age": float(request.form["Age"]),
             "BMI": float(request.form["BMI"]),
@@ -155,14 +157,10 @@ def predict():
         }])
 
         data = pd.get_dummies(data)
-
-        # Drop accidental target column if exists
         if "Has_Asthma" in data.columns:
             data = data.drop(columns=["Has_Asthma"])
-
         data = data.reindex(columns=EXPECTED_COLUMNS, fill_value=0)
 
-        # Predict
         prediction = model.predict(data)[0]
         result = "✅ No Asthma" if prediction == 0 else "😷 Has Asthma"
 
@@ -176,11 +174,32 @@ def predict():
 
 @app.route("/metrics")
 def metrics():
-    """Expose Prometheus metrics."""
     return generate_latest(registry), 200, {"Content-Type": CONTENT_TYPE_LATEST}
 
 # ======================================================
-# Main Entry Point
+# Hugging Face Compatible Launcher (Gradio SDK)
 # ======================================================
+def run_flask():
+    app.run(host="0.0.0.0", port=8000)
+
+def launch_hf_space():
+    """Gradio wrapper to launch Flask app for Hugging Face"""
+    import threading, time
+    thread = threading.Thread(target=run_flask)
+    thread.start()
+    time.sleep(3)
+    try:
+        r = requests.get("http://localhost:8000")
+        if r.status_code == 200:
+            return "✅ Flask app running at / on port 8000"
+    except Exception as e:
+        return f"⚠️ Flask app started but not reachable: {e}"
+
+with gr.Blocks() as demo:
+    gr.Markdown("## 🚀 Flask App Running inside Hugging Face Space (via Gradio SDK)")
+    status = gr.Textbox(label="App Status", value="Click below to start Flask app")
+    start_btn = gr.Button("Start Flask App")
+    start_btn.click(fn=launch_hf_space, outputs=status)
+
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8000)
+    demo.launch(server_name="0.0.0.0", server_port=7860)

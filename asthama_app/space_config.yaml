@@ -1,0 +1,6 @@
+sdk: gradio
+python_version: 3.10
+app_file: app.py
+env:
+  - name: DAGSHUB_TOKEN
+    value: ${{ secrets.DAGSHUB_TOKEN }}
