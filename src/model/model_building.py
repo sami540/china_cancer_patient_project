@@ -3,6 +3,7 @@ import pandas as pd
 import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 import yaml
 from src.logger import logging
 import os
@@ -55,7 +56,8 @@ def split_data(df, test_size, random_state):
 def training_model(x_train, y_train):
     try:
      logging.info('Training model ...... ')
-     clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    #  clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    clf = LogisticRegression(random_state=42)
      clf.fit(x_train, y_train)
      return clf
     except Exception as e:

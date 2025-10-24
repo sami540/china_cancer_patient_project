@@ -62,7 +62,7 @@ jobs:
         run: |
           python src/model/model_evaluation.py
           python scripts/promote_model.py
-
+      # ----------------------------- cd part -------------------------------
       # 10. Deploy app to Hugging Face Space
       - name: Deploy to Hugging Face Space 🚀
         if: success()
