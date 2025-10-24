@@ -57,7 +57,7 @@ def training_model(x_train, y_train):
     try:
      logging.info('Training model ...... ')
     #  clf = RandomForestClassifier(n_estimators=100, random_state=42)
-    clf = LogisticRegression(random_state=42)
+     clf = LogisticRegression(random_state=42, max_iter=1000)
      clf.fit(x_train, y_train)
      return clf
     except Exception as e:
